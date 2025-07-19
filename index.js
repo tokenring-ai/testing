@@ -5,7 +5,3 @@ export * as chatCommands from "./chatCommands.js";
 export const name = "@token-ring/testing";
 export const description = "Service that adds testing tools to the context";
 export const version = "0.1.0";
-
-
-
-
