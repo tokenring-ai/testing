@@ -7,6 +7,8 @@
  */
 
 import { Service } from "@token-ring/registry";
+import { ChatService } from "@token-ring/chat";
+import TestingResource from "./TestingResource.js";
 
 /**
  * Abstract base class for managing test registry and results.
@@ -20,10 +22,10 @@ export default class TestingService extends Service {
 
 	/**
 	 * Stored test results.
-	 * @type {TestResult[]}
+	 * @type {Object.<string,TestResult>}
 	 * @private
 	 */
-	#testResults = [];
+	#latestTestResults = {};
 
 	/**
 	 * Retrieves available tests.
@@ -36,40 +38,41 @@ export default class TestingService extends Service {
 		);
 	}
 
-	/**
-	 * Runs a specific test with the given registry.
-	 * @param {string} name - Name of the test to run.
-	 * @param {TokenRingRegistry} registry - The package registry.
-	 * @throws {Error} When called on the abstract base class.
-	 * @returns {TestResult} Result of the test.
-	 */
-	runTest(name, registry) {
-		throw new Error(
-			`The ${import.meta.filename} class is abstract and cannot be used directly. Please use a subclass instead.`,
-		);
-	}
+	async runTests({ names }, registry) {
+		const chatService = registry.requireFirstServiceByType(ChatService);
 
-	/**
-	 * Sets the test results for the current context.
-	 * @param {TestResult[]} testResults - Array of test results.
-	 */
-	setTestResults(testResults) {
-		this.#testResults = testResults;
+		const results = {};
+		const testingResources =
+			registry.resources.getResourcesByType(TestingResource);
+		for (const testingResource of testingResources) {
+			const name = testingResource.name;
+			if (names && !names.includes(name)) continue;
+
+			chatService.infoLine(`Running tests for resource ${name}...`);
+
+			results[name] = this.#latestTestResults[name] =
+				await testingResource.runTest(registry);
+		}
+
+		return results;
 	}
 
 	/**
 	 * Retrieves the current test results.
-	 * @returns {TestResult[]} Current test results.
+	 * @returns {Object.<string,TestResult>} Current test results.
 	 */
-	getTestResults() {
-		return this.#testResults;
+	getLatestTestResults() {
+		return this.#latestTestResults;
 	}
 
 	/**
 	 * Checks if all tests have passed.
 	 * @returns {boolean} True if all tests passed, false otherwise.
 	 */
-	allTestsPassed() {
-		return this.#testResults?.every((result) => result.passed) ?? false;
+	allTestsPassed(registry) {
+		const resources = registry.resources.getResourcesByType(TestingResource);
+		return resources.every(
+			(resource) => this.#latestTestResults[resource.name]?.passed,
+		);
 	}
 }

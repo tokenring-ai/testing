@@ -31,85 +31,68 @@ export default class ShellCommandTestingResource extends TestingResource {
 			required: true,
 			description: "The working director for the tests",
 		},
-		tests: {
-			type: "object",
-			description: "Named tests that can be run on the source code",
-			additionalProperties: {
-				type: "object",
-				properties: {
-					command: {
-						type: "string",
-						required: true,
-						description: "The command to run",
-					},
-					description: {
-						type: "string",
-						description: "A description of the test",
-					},
-				},
-			},
+		command: {
+			type: "string",
+			required: true,
+			description: "The command to run",
+		},
+		description: {
+			type: "string",
+			description: "A description of the test",
+		},
+		timeout: {
+			type: "number",
+			description: "The timeout for the command",
+			default: 60000,
 		},
 	};
 
 	/**
 	 * Creates an instance of ShellCommandTestingResource
 	 * @param {Object} params - The parameters
-	 * @param {Object.<string, TestCommand>} [params.tests] - The tests collection mapping test names to test commands
+	 * @param {string} params.name - The name of the resource
+	 * @param {string} params.description - The description of the resource
+	 *
+	 * @param {string} params.command - The shell command to execute. Required. Must be non-empty.
+	 * @param {number} [params.timeoutSeconds=60] - Command timeout in seconds (1-600, default 60)
+	 * @param {Object.<string, string>} [params.env={}] - Environment variables as key/value pairs
+	 * @param {string} [params.workingDirectory="./"] - Working directory relative to source root
 	 */
-	constructor({ tests }) {
-		super();
-		if (tests) {
-			for (const [name, test] of Object.entries(tests)) {
-				if (!test.command) {
-					throw new Error(`Test ${name} is missing a command`);
-				}
-			}
-		}
-
-		/** @type {Object.<string, TestCommand>} */
-		this.tests = tests ?? {};
-	}
-
-	/**
-	 * Returns all tests with their descriptions
-	 * @returns {Object.<string, {description: string}>} The tests and their descriptions
-	 */
-	getTests() {
-		return Object.fromEntries(
-			Object.entries(this.tests).map(([name, { description }]) => [
-				name,
-				{ description },
-			]),
-		);
+	constructor({ workingDirectory, command, timeoutSeconds, env, ...params }) {
+		super(params);
+		this.workingDirectory = workingDirectory;
+		this.command = command;
+		this.timeoutSeconds = timeoutSeconds ?? 60;
+		this.env = env ?? process.env;
 	}
 
 	/**
 	 * Runs a specific test
-	 * @param {string} name - The name of the test to run
 	 * @param {TokenRingRegistry} registry - The package registry
 	 * @returns {Promise<TestResult>} The result of the test
 	 * @throws {Error} If the test does not exist
 	 */
-	async runTest(name, registry) {
-		const test = this.tests[name];
-		if (!test) {
-			throw new Error(`Test ${name} does not exist`);
-		}
-
-		try {
-			const { stdout } = await runShellCommand(test, registry);
-
-			return { passed: true, output: stdout };
-		} catch (err) {
-			return {
-				passed: false,
-				output: [
-					`Command ${test.cmd} threw error ${err.message}, stderr:`,
-					err.stderr,
+	async _runTest(registry) {
+		const { ok, stdout, stderr } = await runShellCommand(
+			{
+				command: this.command,
+				timeoutSeconds: this.timeoutSeconds,
+				env: this.env,
+				workingDirectory: this.workingDirectory,
+			},
+			registry,
+		);
+		if (ok) {
+			return stdout;
+		} else {
+			throw new Error(
+				[
+					`Command ${this.command} threw error ${stderr}, stderr:`,
+					stderr,
 					"\nstdout: ",
-					err.stdout,
+					stdout,
 				].join("\n"),
-			};
+			);
 		}
 	}
 }
