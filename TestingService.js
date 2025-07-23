@@ -29,15 +29,28 @@ export default class TestingService extends Service {
 
 	/**
 	 * Retrieves available tests.
+	 * @param {TokenRingRegistry} registry
 	 * @throws {Error} When called on the abstract base class.
 	 * @returns {Object<string, Object>} List of test names.
 	 */
-	getTests() {
-		throw new Error(
-			`The ${import.meta.filename} class is abstract and cannot be used directly. Please use a subclass instead.`,
-		);
+	getTests(registry) {
+		const results = {};
+		const testingResources =
+			registry.resources.getResourcesByType(TestingResource);
+		for (const testingResource of testingResources) {
+			const name = testingResource.name;
+			results[name] = testingResource;
+		}
+		return results;
 	}
 
+	/**
+	 * Retrieves available tests.
+	 * @param {string[]} names
+	 * @param {TokenRingRegistry} registry
+	 * @throws {Error} When called on the abstract base class.
+	 * @returns {Object<string, Object>} List of test names.
+	 */
 	async runTests({ names }, registry) {
 		const chatService = registry.requireFirstServiceByType(ChatService);
 

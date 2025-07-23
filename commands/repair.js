@@ -6,17 +6,65 @@ import { execute as runChat } from "@token-ring/ai-client/runChat";
 import { ChatMessageStorage } from "@token-ring/ai-client";
 
 export const description =
-	"/repair [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
-
+	"/repair [--modify code|test|either] [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
 export async function execute(remainder, registry) {
+	if (!remainder?.trim()) {
+		// List available tests when no arguments provided
+		const testingService = registry.requireFirstServiceByType(TestingService);
+		const chatService = registry.requireFirstServiceByType(ChatService);
+
+		const tests = testingService.getTests(registry);
+		const testNames = Object.keys(tests);
+
+		if (testNames.length === 0) {
+			chatService.infoLine("No tests available");
+		} else {
+			chatService.infoLine("Available tests:");
+			for (const testName of testNames) {
+				chatService.infoLine(`  ${testName}`);
+			}
+		}
+		return;
+	}
+
 	const chatService = registry.requireFirstServiceByType(ChatService);
 	const chatMessageStorage =
 		registry.requireFirstServiceByType(ChatMessageStorage);
 	const testingService = registry.requireFirstServiceByType(TestingService);
 
+	const persona = chatService.getPersonaConfig("repair");
+	if (!persona) {
+		throw new Error("Repair persona not found");
+	}
+
+	// Parse arguments
+	let modifyOption = "either"; // default
+	let testArgs = remainder;
+
+	if (remainder.includes("--modify")) {
+		const parts = remainder.split(/\s+/);
+		const modifyIndex = parts.findIndex((part) => part === "--modify");
+
+		if (modifyIndex !== -1 && modifyIndex + 1 < parts.length) {
+			const modifyValue = parts[modifyIndex + 1];
+			if (["code", "test", "either"].includes(modifyValue)) {
+				modifyOption = modifyValue;
+				// Remove --modify and its value from the remaining args
+				parts.splice(modifyIndex, 2);
+				testArgs = parts.join(" ");
+			} else {
+				throw new Error("Invalid --modify option. Use: code, test, or either");
+			}
+		} else {
+			throw new Error(
+				"--modify option requires a value: code, test, or either",
+			);
+		}
+	}
+
 	let names;
-	if (remainder && remainder.trim() !== "all") {
-		names = remainder.split(/\s+/);
+	if (testArgs && testArgs.trim() !== "all") {
+		names = testArgs.split(/\s+/).filter((name) => name.length > 0);
 	}
 
 	const testResults = await testingService.runTests({ names }, registry);
@@ -34,21 +82,11 @@ export async function execute(remainder, registry) {
 			chatService.errorLine(result.output);
 
 			// Execute runChat for failed test
-			chatService.infoLine(`${name}: Running AI repair...`);
+			chatService.infoLine(
+				`${name}: Running AI repair (modify: ${modifyOption})...`,
+			);
 
-			const repairPrompt = `Test "${name}" has failed. Please analyze the test failure and fix the issue.
-
-Test Output:
-${result.output || result.error?.message || "No output available"}
-
-Instructions:
-1. Analyze the test failure carefully
-2. Identify the root cause of the failure
-3. Implement the necessary fixes to make the test pass
-4. Ensure your changes don't break other functionality
-5. Provide a clear explanation of what was fixed
-
-Please fix this test failure.`;
+			const repairPrompt = getRepairPrompt(name, result, modifyOption);
 
 			try {
 				chatMessageStorage.setCurrentMessage(null);
@@ -56,9 +94,10 @@ Please fix this test failure.`;
 				const [output, response] = await runChat(
 					{
 						input: repairPrompt,
-						systemPrompt:
-							"You are an expert developer assistant. Fix the failing test by analyzing the error and implementing the necessary code changes.",
-						model: "auto:intelligence>=2",
+						systemPrompt: persona.instructions,
+						model: persona.model,
+						//temperature: persona.temperature,
+						//top_p: persona.top_p,
 					},
 					registry,
 				);
@@ -73,10 +112,39 @@ Please fix this test failure.`;
 	chatMessageStorage.setCurrentMessage(currentMessage);
 }
 
+function getRepairPrompt(testName, result, modifyOption) {
+	const testOutput =
+		result.output || result.error?.message || "No output available";
+
+	switch (modifyOption) {
+		case "code":
+			return `Test "${testName}" has failed. Please analyze the test failure and fix the underlying code to make the tests pass. Only fix the underlying code, do not update the tests themselves.
+
+Test Output:
+${testOutput}`;
+
+		case "test":
+			return `Test "${testName}" has failed. Please analyze the test failure and fix the test code itself to make it pass. Only update the test code, do not modify the underlying implementation.
+
+Test Output:
+${testOutput}`;
+
+		case "either":
+		default:
+			return `Test "${testName}" has failed. Please analyze the test failure and determine whether to fix the underlying code or the test itself to resolve the failure. Choose the most appropriate approach based on the failure analysis.
+
+Test Output:
+${testOutput}`;
+	}
+}
+
 export function help() {
 	return [
-		"/repair [test_name|all]",
-		"  - With no arguments: Shows available tests",
+		"/repair [--modify code|test|either] [test_name|all]",
+		"  --modify code: Only repair the underlying code",
+		"  --modify test: Only repair the test code itself",
+		"  --modify either: Let AI decide whether to repair code or tests (default)",
+		"  - With no test arguments: Shows available tests",
 		"  - With test_name: Run specific test and repair if it fails",
 		"  - With 'all': Run all available tests and repair any failures",
 	];
