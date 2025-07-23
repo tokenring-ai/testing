@@ -96,6 +96,7 @@ export async function execute(remainder, registry) {
 						input: repairPrompt,
 						systemPrompt: persona.instructions,
 						model: persona.model,
+						maxSteps: 30,
 						//temperature: persona.temperature,
 						//top_p: persona.top_p,
 					},
