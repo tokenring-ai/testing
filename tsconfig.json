@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"outDir": ".",
+		"rootDir": ".",
+		"declaration": true,
+		"declarationMap": false,
+		"emitDeclarationOnly": false,
+		"strict": false,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"tsBuildInfoFile": ".tsbuildinfo"
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["node_modules", "dist"]
+}
