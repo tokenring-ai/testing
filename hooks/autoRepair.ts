@@ -1,11 +1,12 @@
 import TestingService from "../TestingService.js";
-import ChatService from "@token-ring/chat/ChatService";
-import WorkQueueService from "@token-ring/queue/WorkQueueService";
-import FileSystemService from "@token-ring/filesystem/FileSystemService";
+import { ChatService } from "@token-ring/chat";
+import { WorkQueueService } from "@token-ring/queue";
+import { FileSystemService } from "@token-ring/filesystem";
+import { Registry } from "@token-ring/registry";
 
 export const description = "Runs repairs automatically after chat is complete";
 
-export async function afterTesting(registry) {
+export async function afterTesting(registry: Registry): Promise<void> {
 	const chatService = registry.requireFirstServiceByType(ChatService);
 	const workQueueService = registry.requireFirstServiceByType(WorkQueueService);
 
@@ -15,9 +16,9 @@ export async function afterTesting(registry) {
 
 	const filesystem = registry.requireFirstServiceByType(FileSystemService);
 	if (filesystem.dirty) {
-		const testingServices = registry.getServicesByType(TestingService);
+		const testingServices = registry.services.getServicesByType(TestingService);
 		for (const testingService of testingServices) {
-			const testResults = testingService.getTestResults();
+			const testResults = testingService.getLatestTestResults();
 			for (const [name, result] of Object.entries(testResults)) {
 				if (!result.passed) {
 					chatService.errorLine(

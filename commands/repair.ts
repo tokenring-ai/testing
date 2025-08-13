@@ -3,10 +3,11 @@ import ChatService from "@token-ring/chat/ChatService";
 import TestingService from "../TestingService.js";
 import { execute as runChat } from "@token-ring/ai-client/runChat";
 import { ChatMessageStorage } from "@token-ring/ai-client";
+import {Registry} from "@token-ring/registry";
 
 export const description =
 	"/repair [--modify code|test|either] [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
-export async function execute(remainder: string | undefined, registry: any) {
+export async function execute(remainder: string | undefined, registry: Registry) {
 	if (!remainder?.trim()) {
 		const testingService = registry.requireFirstServiceByType(TestingService);
 		const chatService = registry.requireFirstServiceByType(ChatService);

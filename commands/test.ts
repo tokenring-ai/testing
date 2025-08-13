@@ -1,11 +1,12 @@
 import chalk from "chalk";
 import ChatService from "@token-ring/chat/ChatService";
 import TestingService from "../TestingService.js";
+import { Registry } from "@token-ring/registry";
 
 export const description =
 	"/test [test_name|all] - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
 
-export async function execute(remainder: string | undefined, registry: any) {
+export async function execute(remainder: string | undefined, registry: Registry) {
 	const chatService = registry.requireFirstServiceByType(ChatService);
 	const testingService = registry.requireFirstServiceByType(TestingService);
 

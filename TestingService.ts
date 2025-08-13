@@ -1,4 +1,4 @@
-import { Service } from "@token-ring/registry";
+import {Registry, Service} from "@token-ring/registry";
 import { ChatService } from "@token-ring/chat";
 import TestingResource, {
 	type TestResult as ResourceTestResult,
@@ -16,7 +16,7 @@ export default class TestingService extends Service {
 
 	#latestTestResults: Record<string, ResourceTestResult> = {};
 
-	getTests(registry: any): Record<string, TestingResource> {
+	getTests(registry: Registry): Record<string, TestingResource> {
 		const results: Record<string, TestingResource> = {};
 		const testingResources =
 			registry.resources.getResourcesByType(TestingResource);
@@ -29,7 +29,7 @@ export default class TestingService extends Service {
 
 	async runTests(
 		{ names }: { names?: string[] },
-		registry: any,
+		registry: Registry,
 	): Promise<Record<string, ResourceTestResult>> {
 		const chatService = registry.requireFirstServiceByType(ChatService);
 
@@ -53,7 +53,7 @@ export default class TestingService extends Service {
 		return this.#latestTestResults;
 	}
 
-	allTestsPassed(registry: any): boolean {
+	allTestsPassed(registry: Registry): boolean {
 		const resources = registry.resources.getResourcesByType(
 			TestingResource,
 		) as TestingResource[];

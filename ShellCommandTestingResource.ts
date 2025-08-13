@@ -1,5 +1,6 @@
-import runShellCommand from "@token-ring/filesystem/tools/runShellCommand";
+import { execute as runShellCommand} from "@token-ring/filesystem/tools/runShellCommand";
 import TestingResource from "./TestingResource.js";
+import {Registry} from "@token-ring/registry";
 
 export type TestCommand = {
 	command: string;
@@ -58,7 +59,7 @@ export default class ShellCommandTestingResource extends TestingResource {
 		this.env = (env ?? process.env) as Record<string, string | undefined>;
 	}
 
-	async _runTest(registry: any): Promise<string> {
+	async _runTest(registry: Registry): Promise<string> {
 		const { ok, stdout, stderr } = await runShellCommand(
 			{
 				command: this.command,
