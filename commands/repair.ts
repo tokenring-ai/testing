@@ -1,8 +1,7 @@
-import chalk from "chalk";
 import ChatService from "@token-ring/chat/ChatService";
 import TestingService from "../TestingService.js";
-import { execute as runChat } from "@token-ring/ai-client/runChat";
-import { ChatMessageStorage } from "@token-ring/ai-client";
+import {execute as runChat} from "@token-ring/ai-client/runChat";
+import {ChatMessageStorage} from "@token-ring/ai-client";
 import {Registry} from "@token-ring/registry";
 
 export const description =

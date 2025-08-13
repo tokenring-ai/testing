@@ -1,4 +1,4 @@
-import { execute as runShellCommand} from "@token-ring/filesystem/tools/runShellCommand";
+import {execute as runShellCommand} from "@token-ring/filesystem/tools/runShellCommand";
 import TestingResource from "./TestingResource.js";
 import {Registry} from "@token-ring/registry";
 

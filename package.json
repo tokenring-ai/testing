@@ -13,14 +13,13 @@
 		"typescript": "^5.6.3"
 	},
 	"exports": {
-		".": "./index.js",
-		"./*": "./*.js"
+		".": "./index.ts",
+		"./*": "./*.ts"
 	},
-	"types": "./index.d.ts",
 	"license": "MIT",
 	"scripts": {
 		"build": "tsc -p .",
-		"lint": "eslint ",
+
 		"eslint": "eslint --fix ./"
 	},
 	"type": "module"

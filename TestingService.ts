@@ -1,8 +1,6 @@
 import {Registry, Service} from "@token-ring/registry";
-import { ChatService } from "@token-ring/chat";
-import TestingResource, {
-	type TestResult as ResourceTestResult,
-} from "./TestingResource.js";
+import {ChatService} from "@token-ring/chat";
+import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
 
 export type TestResult = {
 	passed: boolean;

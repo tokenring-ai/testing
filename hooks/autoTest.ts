@@ -1,7 +1,7 @@
 import TestingService from "../TestingService.js";
-import { ChatService } from "@token-ring/chat";
-import { FileSystemService } from "@token-ring/filesystem";
-import { Registry } from "@token-ring/registry";
+import {ChatService} from "@token-ring/chat";
+import {FileSystemService} from "@token-ring/filesystem";
+import {Registry} from "@token-ring/registry";
 
 export const description = "Runs tests automatically after chat is complete";
 

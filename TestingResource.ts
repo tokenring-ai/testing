@@ -1,5 +1,4 @@
 import {Registry, Resource} from "@token-ring/registry";
-import { ChatService } from "@token-ring/chat";
 
 export type Test = {
 	name: string;

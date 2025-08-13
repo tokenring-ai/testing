@@ -1,8 +1,8 @@
 import TestingService from "../TestingService.js";
-import { ChatService } from "@token-ring/chat";
-import { WorkQueueService } from "@token-ring/queue";
-import { FileSystemService } from "@token-ring/filesystem";
-import { Registry } from "@token-ring/registry";
+import {ChatService} from "@token-ring/chat";
+import {WorkQueueService} from "@token-ring/queue";
+import {FileSystemService} from "@token-ring/filesystem";
+import {Registry} from "@token-ring/registry";
 
 export const description = "Runs repairs automatically after chat is complete";
 
