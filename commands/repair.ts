@@ -91,7 +91,6 @@ export async function execute(remainder: string | undefined, registry: Registry)
 						input: repairPrompt,
 						systemPrompt: persona.instructions,
 						model: persona.model,
-						maxSteps: 30,
 					},
 					registry,
 				);
