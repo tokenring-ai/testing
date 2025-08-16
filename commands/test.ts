@@ -9,17 +9,35 @@ export async function execute(remainder: string | undefined, registry: Registry)
   const chatService = registry.requireFirstServiceByType(ChatService);
   const testingService = registry.requireFirstServiceByType(TestingService);
 
-  let names: string[] | undefined;
-  if (remainder && remainder.trim() !== "all") {
-    names = remainder.split(/\s+/);
+  const trimmed = remainder?.trim();
+
+  // No arguments: list available tests
+  if (!trimmed) {
+    const available = Object.keys(testingService.getTests(registry));
+    if (available.length === 0) {
+      chatService.systemLine("No tests available.");
+    } else {
+      chatService.systemLine("Available tests: " + available.join(", "));
+    }
+    return;
   }
 
-  const testResults = await testingService.runTests({names}, registry);
+  // Determine which tests to run
+  let names: string[] | undefined;
+  if (trimmed === "all") {
+    // Run all tests – leave names undefined to let runTests handle it
+    names = undefined;
+  } else {
+    names = trimmed.split(/\s+/).filter((n) => n.length > 0);
+  }
 
-  names ??= Object.keys(testResults);
+  const testResults = await testingService.runTests({ names }, registry);
 
-  for (const name of names) {
+  // Output results for requested tests (or all if 'all')
+  const outputNames = names ?? Object.keys(testResults);
+  for (const name of outputNames) {
     const result = testResults[name];
+    if (!result) continue; // unknown test name
     if (result.passed) {
       chatService.systemLine(`${name}: PASSED`);
     } else {
