@@ -10,7 +10,7 @@
 		"glob-gitignore": "^1.0.15"
 	},
 	"devDependencies": {
-		"typescript": "^5.6.3"
+		"typescript": "^5.9.2"
 	},
 	"exports": {
 		".": "./index.ts",
