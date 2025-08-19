@@ -31,7 +31,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
     names = trimmed.split(/\s+/).filter((n) => n.length > 0);
   }
 
-  const testResults = await testingService.runTests({ names }, registry);
+  const testResults = await testingService.runTests({names}, registry);
 
   // Output results for requested tests (or all if 'all')
   const outputNames = names ?? Object.keys(testResults);
@@ -47,6 +47,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
   }
 }
 
+// noinspection JSUnusedGlobalSymbols
 export function help() {
   return [
     "/test [test_name|all]",

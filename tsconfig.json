@@ -1,21 +1,26 @@
 {
-	"compilerOptions": {
-		"target": "ES2022",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"outDir": ".",
-		"rootDir": ".",
-		"declaration": true,
-		"declarationMap": false,
-		"emitDeclarationOnly": false,
-		"strict": true,
-		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true,
+ "compilerOptions": {
+  "target": "ES2022",
+  "module": "NodeNext",
+  "moduleResolution": "NodeNext",
+  "outDir": ".",
+  "rootDir": ".",
+  "declaration": true,
+  "declarationMap": false,
+  "emitDeclarationOnly": false,
+  "strict": true,
+  "skipLibCheck": true,
+  "esModuleInterop": true,
+  "forceConsistentCasingInFileNames": true,
+  "resolveJsonModule": true,
   "allowImportingTsExtensions": true,
-		"tsBuildInfoFile": ".tsbuildinfo"
-	},
-	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "dist"]
+  "tsBuildInfoFile": ".tsbuildinfo"
+ },
+ "include": [
+  "**/*.ts"
+ ],
+ "exclude": [
+  "node_modules",
+  "dist"
+ ]
 }

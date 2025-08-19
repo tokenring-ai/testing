@@ -38,31 +38,25 @@ export default class ShellCommandTestingResource extends TestingResource {
   workingDirectory: string | undefined;
   command!: string;
   timeoutSeconds: number = 60;
-  env: NodeJS.ProcessEnv = process.env;
 
   constructor({
                 workingDirectory,
                 command,
                 timeoutSeconds,
-                env,
                 ...params
               }: any) {
     super(params);
     this.workingDirectory = workingDirectory;
     this.command = command;
     this.timeoutSeconds = timeoutSeconds ?? 60;
-    this.env = env ?? process.env;
   }
 
   async _runTest(registry: Registry): Promise<string> {
-    const envFiltered = Object.fromEntries(
-      Object.entries(this.env).filter(([, v]) => v !== undefined),
-    ) as Record<string, string>;
+
     const {ok, stdout, stderr} = await runShellCommand(
       {
         command: this.command,
         timeoutSeconds: this.timeoutSeconds,
-        env: envFiltered,
         workingDirectory: this.workingDirectory,
       },
       registry,

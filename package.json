@@ -1,26 +1,24 @@
 {
-	"name": "@token-ring/testing",
-	"version": "0.1.0",
-	"dependencies": {
-		"@token-ring/chat": "0.1.0",
-
-		"@token-ring/filesystem": "0.1.0",
-		"@token-ring/queue": "0.1.0",
-		"@token-ring/registry": "0.1.0",
-		"glob-gitignore": "^1.0.15"
-	},
-	"devDependencies": {
-		"typescript": "^5.9.2"
-	},
-	"exports": {
-		".": "./index.ts",
-		"./*": "./*.ts"
-	},
-	"license": "MIT",
-	"scripts": {
-		"build": "tsc -p .",
-
-		"eslint": "eslint --fix ./"
-	},
-	"type": "module"
+ "name": "@token-ring/testing",
+ "version": "0.1.0",
+ "dependencies": {
+  "@token-ring/chat": "0.1.0",
+  "@token-ring/filesystem": "0.1.0",
+  "@token-ring/queue": "0.1.0",
+  "@token-ring/registry": "0.1.0",
+  "glob-gitignore": "^1.0.15"
+ },
+ "devDependencies": {
+  "typescript": "^5.9.2"
+ },
+ "exports": {
+  ".": "./index.ts",
+  "./*": "./*.ts"
+ },
+ "license": "MIT",
+ "scripts": {
+  "build": "tsc -p .",
+  "eslint": "eslint --fix ./"
+ },
+ "type": "module"
 }

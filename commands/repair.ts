@@ -2,6 +2,7 @@ import {ChatMessageStorage} from "@token-ring/ai-client";
 import {execute as runChat} from "@token-ring/ai-client/runChat";
 import ChatService from "@token-ring/chat/ChatService";
 import {Registry} from "@token-ring/registry";
+import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
 
 export const description =
@@ -84,22 +85,19 @@ export async function execute(remainder: string | undefined, registry: Registry)
 
       const repairPrompt = getRepairPrompt(name, result, modifyOption);
 
-      try {
-        chatMessageStorage.setCurrentMessage(null);
+      chatMessageStorage.setCurrentMessage(null);
 
-        const [output, response] = await runChat(
-          {
-            input: repairPrompt,
-            systemPrompt: persona.instructions,
-            model: persona.model,
-          },
-          registry,
-        );
+      const [output, response] = await runChat(
+        {
+          input: repairPrompt,
+          systemPrompt: persona.instructions,
+          model: persona.model,
+        },
+        registry,
+      );
 
-        chatService.systemLine(`${name}: AI repair completed`);
-      } catch (error: any) {
-        chatService.errorLine(`${name}: AI repair failed - ${error.message}`);
-      }
+      chatService.systemLine(`${name}: AI repair completed`);
+
     }
   }
 
@@ -108,11 +106,15 @@ export async function execute(remainder: string | undefined, registry: Registry)
 
 function getRepairPrompt(
   testName: string,
-  result: any,
+  result: ResourceTestResult,
   modifyOption: "code" | "test" | "either",
 ) {
   const testOutput =
-    result.output || result.error?.message || "No output available";
+    result.output ??
+    (typeof result.error === "object" && result.error && "message" in result.error
+      ? (result.error as { message: string }).message
+      : undefined) ??
+    "No output available";
 
   switch (modifyOption) {
     case "code":
@@ -136,6 +138,7 @@ ${testOutput}`;
   }
 }
 
+// noinspection JSUnusedGlobalSymbols
 export function help() {
   return [
     "/repair [--modify code|test|either] [test_name|all]",
