@@ -13,7 +13,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
     const testingService = registry.requireFirstServiceByType(TestingService);
     const chatService = registry.requireFirstServiceByType(ChatService);
 
-    const tests = testingService.getTests(registry);
+    const tests = Array.from(testingService.getActiveResourceNames());
     const testNames = Object.keys(tests);
 
     if (testNames.length === 0) {

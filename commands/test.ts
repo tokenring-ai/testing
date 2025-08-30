@@ -13,7 +13,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
 
   // No arguments: list available tests
   if (!trimmed) {
-    const available = Object.keys(testingService.getTests(registry));
+    const available = Array.from(testingService.getActiveResourceNames());
     if (available.length === 0) {
       chatService.systemLine("No tests available.");
     } else {

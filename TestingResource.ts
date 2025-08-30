@@ -1,4 +1,4 @@
-import {Registry, Resource} from "@token-ring/registry";
+import {Registry} from "@token-ring/registry";
 
 export type Test = {
   name: string;
@@ -16,7 +16,7 @@ export type TestResult = {
 /**
  * Abstract class that implements testing resources
  */
-export default class TestingResource extends Resource {
+export default class TestingResource  {
   #testResults: TestResult[] = [];
 
   /**

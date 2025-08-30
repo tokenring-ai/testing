@@ -12,28 +12,15 @@ export type TestResult = {
   output: string;
 };
 
+export interface ShellCommandTestingResourceOptions {
+  name: string;
+  description?: string;
+  workingDirectory?: string;
+  command: string;
+  timeoutSeconds?: number;
+}
+
 export default class ShellCommandTestingResource extends TestingResource {
-  static constructorProperties = {
-    cwd: {
-      type: "string",
-      required: true,
-      description: "The working director for the tests",
-    },
-    command: {
-      type: "string",
-      required: true,
-      description: "The command to run",
-    },
-    description: {
-      type: "string",
-      description: "A description of the test",
-    },
-    timeout: {
-      type: "number",
-      description: "The timeout for the command",
-      default: 60000,
-    },
-  } as const;
   description: string = "Provides ShellCommandTesting functionality";
   workingDirectory: string | undefined;
   command!: string;
@@ -44,8 +31,8 @@ export default class ShellCommandTestingResource extends TestingResource {
                 command,
                 timeoutSeconds,
                 ...params
-              }: any) {
-    super(params);
+              }: ShellCommandTestingResourceOptions) {
+    super();
     this.workingDirectory = workingDirectory;
     this.command = command;
     this.timeoutSeconds = timeoutSeconds ?? 60;

@@ -1,5 +1,6 @@
 import {ChatService} from "@token-ring/chat";
 import {Registry, Service} from "@token-ring/registry";
+import GenericMultipleRegistry from "@token-ring/utility/GenericMultipleRegistry";
 import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
 
 export type TestResult = {
@@ -14,16 +15,13 @@ export default class TestingService extends Service {
 
   #latestTestResults: Record<string, ResourceTestResult> = {};
 
-  getTests(registry: Registry): Record<string, TestingResource> {
-    const results: Record<string, TestingResource> = {};
-    const testingResources =
-      registry.resources.getResourcesByType(TestingResource);
-    for (const testingResource of testingResources as TestingResource[]) {
-      const name = testingResource.name as string;
-      results[name] = testingResource;
-    }
-    return results;
-  }
+  private testRegistry = new GenericMultipleRegistry<TestingResource>();
+
+  registerResource = this.testRegistry.register;
+  getActiveResourceNames = this.testRegistry.getActiveItemNames;
+  enableResources = this.testRegistry.enableItem;
+  getAvailableResources = this.testRegistry.getAllItemNames;
+
 
   async runTests(
     {names}: { names?: string[] },
@@ -32,11 +30,11 @@ export default class TestingService extends Service {
     const chatService = registry.requireFirstServiceByType(ChatService);
 
     const results: Record<string, ResourceTestResult> = {};
-    const testingResources =
-      registry.resources.getResourcesByType(TestingResource);
-    for (const testingResource of testingResources as TestingResource[]) {
-      const name = testingResource.name as string;
+    const testingResources = this.testRegistry.getActiveItemEntries();
+    for (const name in testingResources) {
       if (names && !names.includes(name)) continue;
+
+      const testingResource = testingResources[name];
 
       chatService.infoLine(`Running tests for resource ${name}...`);
 
@@ -52,11 +50,9 @@ export default class TestingService extends Service {
   }
 
   allTestsPassed(registry: Registry): boolean {
-    const resources = registry.resources.getResourcesByType(
-      TestingResource,
-    ) as TestingResource[];
-    return resources.every(
-      (resource) => this.#latestTestResults[resource.name as string]?.passed,
+    const resources = this.testRegistry.getActiveItemEntries();
+    return Object.keys(resources).every(
+      name => this.#latestTestResults[name]?.passed,
     );
   }
 }
