@@ -1,41 +1,33 @@
-import {ChatMessageStorage} from "@token-ring/ai-client";
-import {execute as runChat} from "@token-ring/ai-client/runChat";
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
+import {ChatMessageStorage} from "@tokenring-ai/ai-client";
+import runChat from "@tokenring-ai/ai-client/runChat";
 import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
 
 export const description =
   "/repair [--modify code|test|either] [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
 
-export async function execute(remainder: string | undefined, registry: Registry) {
+export async function execute(remainder: string | undefined, agent: Agent) {
   if (!remainder?.trim()) {
-    const testingService = registry.requireFirstServiceByType(TestingService);
-    const chatService = registry.requireFirstServiceByType(ChatService);
+    const testingService = agent.requireFirstServiceByType(TestingService);
 
     const tests = Array.from(testingService.getActiveResourceNames());
     const testNames = Object.keys(tests);
 
     if (testNames.length === 0) {
-      chatService.infoLine("No tests available");
+      agent.infoLine("No tests available");
     } else {
-      chatService.infoLine("Available tests:");
+      agent.infoLine("Available tests:");
       for (const testName of testNames) {
-        chatService.infoLine(`  ${testName}`);
+        agent.infoLine(`  ${testName}`);
       }
     }
     return;
   }
 
-  const chatService = registry.requireFirstServiceByType(ChatService);
   const chatMessageStorage =
-    registry.requireFirstServiceByType(ChatMessageStorage);
-  const testingService = registry.requireFirstServiceByType(TestingService);
-
-  const persona = chatService.getPersonaConfig("repair");
-  if (!persona) {
-    throw new Error("Repair persona not found");
-  }
+    agent.requireFirstServiceByType(ChatMessageStorage);
+  const testingService = agent.requireFirstServiceByType(TestingService);
 
   let modifyOption: "code" | "test" | "either" = "either";
   let testArgs = remainder;
@@ -65,7 +57,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
     names = testArgs.split(/\s+/).filter((name) => name.length > 0);
   }
 
-  const testResults = await testingService.runTests({names}, registry);
+  const testResults = await testingService.runTests({names}, agent);
 
   names ??= Object.keys(testResults);
 
@@ -74,12 +66,12 @@ export async function execute(remainder: string | undefined, registry: Registry)
   for (const name of names) {
     const result = testResults[name];
     if (result.passed) {
-      chatService.systemLine(`${name}: PASSED`);
+      agent.infoLine(`${name}: PASSED`);
     } else {
-      chatService.errorLine(`${name}: FAILED`);
-      chatService.errorLine(result.output);
+      agent.errorLine(`${name}: FAILED`);
+      if (result.output) agent.errorLine(result.output);
 
-      chatService.infoLine(
+      agent.infoLine(
         `${name}: Running AI repair (modify: ${modifyOption})...`,
       );
 
@@ -90,13 +82,11 @@ export async function execute(remainder: string | undefined, registry: Registry)
       const [output, response] = await runChat(
         {
           input: repairPrompt,
-          systemPrompt: persona.instructions,
-          model: persona.model,
         },
-        registry,
+        agent,
       );
 
-      chatService.systemLine(`${name}: AI repair completed`);
+      agent.infoLine(`${name}: AI repair completed`);
 
     }
   }

@@ -1,4 +1,4 @@
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 
 export type Test = {
   name: string;
@@ -16,14 +16,14 @@ export type TestResult = {
 /**
  * Abstract class that implements testing resources
  */
-export default class TestingResource  {
+export default class TestingResource {
   #testResults: TestResult[] = [];
 
   /**
    * Runs a specific test (to be implemented by subclasses)
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async _runTest(registry: Registry): Promise<string> {
+  async _runTest(agent: Agent): Promise<string> {
     throw new Error(
       `The ${import.meta.filename} class is abstract and cannot be used directly. Please use a subclass instead.`,
     );
@@ -36,10 +36,10 @@ export default class TestingResource  {
     return this.#testResults[this.#testResults.length - 1];
   }
 
-  async runTest(registry: Registry): Promise<TestResult> {
+  async runTest(agent: Agent): Promise<TestResult> {
     const startedAt = new Date();
     try {
-      const result = await this._runTest(registry);
+      const result = await this._runTest(agent);
       this.#testResults.push({
         startedAt,
         finishedAt: new Date(),

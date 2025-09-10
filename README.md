@@ -1,8 +1,8 @@
-@token-ring/testing
+@tokenring-ai/testing
 
 Overview
 
-- @token-ring/testing provides a lightweight testing layer for the Token Ring ecosystem. It introduces a TestingService
+- @tokenring-ai/testing provides a lightweight testing layer for the Token Ring ecosystem. It introduces a TestingService
   that discovers and runs tests exposed by resources, a base TestingResource to implement custom tests, a
   ShellCommandTestingResource for command-based checks, and chat commands to run and automatically repair failing tests.
 
@@ -17,7 +17,7 @@ What this package offers
   throw on failure.
 - Resource: ShellCommandTestingResource
 - Runs a shell command as a test with configurable workingDirectory, command, timeoutSeconds, and env.
-- Uses @token-ring/filesystem/tools/runShellCommand under the hood.
+- Uses @tokenring-ai/filesystem/tools/runShellCommand under the hood.
 - Chat commands
 - /test [test_name|all] — Run all or selected tests and report results.
 - /repair [--modify code|test|either] [test_name|all] — Run tests and use AI to attempt automatic fixes for failures.
@@ -90,8 +90,8 @@ Usage Examples
 
 1) Create a custom test by subclassing TestingResource
 
-import { Registry } from "@token-ring/registry";
-import TestingResource from "@token-ring/testing/TestingResource";
+import { Registry } from "@tokenring-ai/registry";
+import TestingResource from "@tokenring-ai/testing/TestingResource";
 
 class APingTest extends TestingResource {
 name = "api:ping";
@@ -110,7 +110,7 @@ return "Ping OK";
 
 2) Use ShellCommandTestingResource
 
-import ShellCommandTestingResource from "@token-ring/testing/ShellCommandTestingResource";
+import ShellCommandTestingResource from "@tokenring-ai/testing/ShellCommandTestingResource";
 
 const lintTest = new ShellCommandTestingResource({
 name: "lint",
@@ -124,7 +124,7 @@ timeoutSeconds: 120,
 
 3) Programmatically run tests via TestingService
 
-import { TestingService } from "@token-ring/testing";
+import { TestingService } from "@tokenring-ai/testing";
 
 const testingService = new TestingService();
 // registry.registerService(testingService);
@@ -134,9 +134,9 @@ const testingService = new TestingService();
 Installation
 
 - This package is part of the Token Ring monorepo and is typically consumed by the runtime.
-- If needed directly, add dependency: "@token-ring/testing": "0.1.0".
-- Ensure peer packages are available in your workspace: @token-ring/registry and @token-ring/chat. For /repair,
-  @token-ring/ai-client must be configured (including a suitable persona named "repair").
+- If needed directly, add dependency: "@tokenring-ai/testing": "0.1.0".
+- Ensure peer packages are available in your workspace: @tokenring-ai/registry and @tokenring-ai/chat. For /repair,
+  @tokenring-ai/ai-client must be configured (including a suitable persona named "repair").
 
 Notes
 

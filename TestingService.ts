@@ -1,6 +1,6 @@
-import {ChatService} from "@token-ring/chat";
-import {Registry, Service} from "@token-ring/registry";
-import GenericMultipleRegistry from "@token-ring/utility/GenericMultipleRegistry";
+import {Agent} from "@tokenring-ai/agent";
+import {TokenRingService} from "@tokenring-ai/agent/types";
+import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/KeyedRegistryWithMultipleSelection";
 import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
 
 export type TestResult = {
@@ -9,25 +9,24 @@ export type TestResult = {
   details?: string;
 };
 
-export default class TestingService extends Service {
+export default class TestingService implements TokenRingService {
   name: string = "TestingService";
   description: string = "Provides testing functionality";
 
   #latestTestResults: Record<string, ResourceTestResult> = {};
 
-  private testRegistry = new GenericMultipleRegistry<TestingResource>();
+  private testRegistry = new KeyedRegistryWithMultipleSelection<TestingResource>();
 
   registerResource = this.testRegistry.register;
   getActiveResourceNames = this.testRegistry.getActiveItemNames;
-  enableResources = this.testRegistry.enableItem;
+  enableResources = this.testRegistry.enableItems;
   getAvailableResources = this.testRegistry.getAllItemNames;
 
 
   async runTests(
     {names}: { names?: string[] },
-    registry: Registry,
+    agent: Agent,
   ): Promise<Record<string, ResourceTestResult>> {
-    const chatService = registry.requireFirstServiceByType(ChatService);
 
     const results: Record<string, ResourceTestResult> = {};
     const testingResources = this.testRegistry.getActiveItemEntries();
@@ -36,10 +35,10 @@ export default class TestingService extends Service {
 
       const testingResource = testingResources[name];
 
-      chatService.infoLine(`Running tests for resource ${name}...`);
+      agent.infoLine(`Running tests for resource ${name}...`);
 
       results[name] = this.#latestTestResults[name] =
-        await testingResource.runTest(registry);
+        await testingResource.runTest(agent);
     }
 
     return results;
@@ -49,7 +48,7 @@ export default class TestingService extends Service {
     return this.#latestTestResults;
   }
 
-  allTestsPassed(registry: Registry): boolean {
+  allTestsPassed(agent: Agent): boolean {
     const resources = this.testRegistry.getActiveItemEntries();
     return Object.keys(resources).every(
       name => this.#latestTestResults[name]?.passed,

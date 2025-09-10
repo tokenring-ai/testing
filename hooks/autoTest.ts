@@ -1,26 +1,24 @@
-import {ChatService} from "@token-ring/chat";
-import {FileSystemService} from "@token-ring/filesystem";
-import {Registry} from "@token-ring/registry";
+import {Agent} from "@tokenring-ai/agent";
+import {FileSystemService} from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
 export const description = "Runs tests automatically after chat is complete";
 
-export async function afterChatComplete(registry: Registry): Promise<void> {
-  const chatService = registry.requireFirstServiceByType(ChatService);
+export async function afterChatComplete(agent: Agent): Promise<void> {
 
-  const filesystem = registry.requireFirstServiceByType(FileSystemService);
+  const filesystem = agent.requireFirstServiceByType(FileSystemService);
   if (filesystem.dirty) {
-    const testingServices = registry.services.getServicesByType(TestingService);
+    const testingServices = agent.team.services.getItemsByType(TestingService);
     for (const testingService of testingServices) {
       // Run all tests for this testing service
-      const testResults = await testingService.runTests({}, registry);
+      const testResults = await testingService.runTests({}, agent);
 
       // Output results
       for (const [name, result] of Object.entries(testResults)) {
         if (result.passed) {
-          chatService.infoLine(`Test ${name} passed.`);
+          agent.infoLine(`Test ${name} passed.`);
         } else {
-          chatService.errorLine(
+          agent.errorLine(
             `Test ${name} failed, result: \n${result.output}`,
           );
         }

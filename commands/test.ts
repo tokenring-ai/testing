@@ -1,13 +1,11 @@
-import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 import TestingService from "../TestingService.js";
 
 export const description =
   "/test [test_name|all] - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
 
-export async function execute(remainder: string | undefined, registry: Registry) {
-  const chatService = registry.requireFirstServiceByType(ChatService);
-  const testingService = registry.requireFirstServiceByType(TestingService);
+export async function execute(remainder: string | undefined, agent: Agent) {
+  const testingService = agent.requireFirstServiceByType(TestingService);
 
   const trimmed = remainder?.trim();
 
@@ -15,9 +13,9 @@ export async function execute(remainder: string | undefined, registry: Registry)
   if (!trimmed) {
     const available = Array.from(testingService.getActiveResourceNames());
     if (available.length === 0) {
-      chatService.systemLine("No tests available.");
+      agent.infoLine("No tests available.");
     } else {
-      chatService.systemLine("Available tests: " + available.join(", "));
+      agent.infoLine("Available tests: " + available.join(", "));
     }
     return;
   }
@@ -31,7 +29,7 @@ export async function execute(remainder: string | undefined, registry: Registry)
     names = trimmed.split(/\s+/).filter((n) => n.length > 0);
   }
 
-  const testResults = await testingService.runTests({names}, registry);
+  const testResults = await testingService.runTests({names}, agent);
 
   // Output results for requested tests (or all if 'all')
   const outputNames = names ?? Object.keys(testResults);
@@ -39,10 +37,10 @@ export async function execute(remainder: string | undefined, registry: Registry)
     const result = testResults[name];
     if (!result) continue; // unknown test name
     if (result.passed) {
-      chatService.systemLine(`${name}: PASSED`);
+      agent.infoLine(`${name}: PASSED`);
     } else {
-      chatService.errorLine(`${name}: FAILED`);
-      chatService.errorLine(result.output);
+      agent.errorLine(`${name}: FAILED`);
+      if (result.output) agent.errorLine(result.output);
     }
   }
 }

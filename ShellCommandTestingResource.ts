@@ -1,5 +1,5 @@
-import {execute as runShellCommand} from "@token-ring/filesystem/tools/runShellCommand";
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
+import {execute as runShellCommand} from "@tokenring-ai/filesystem/tools/runShellCommand";
 import TestingResource from "./TestingResource.js";
 
 export type TestCommand = {
@@ -38,7 +38,7 @@ export default class ShellCommandTestingResource extends TestingResource {
     this.timeoutSeconds = timeoutSeconds ?? 60;
   }
 
-  async _runTest(registry: Registry): Promise<string> {
+  async _runTest(agent: Agent): Promise<string> {
 
     const {ok, stdout, stderr} = await runShellCommand(
       {
@@ -46,7 +46,7 @@ export default class ShellCommandTestingResource extends TestingResource {
         timeoutSeconds: this.timeoutSeconds,
         workingDirectory: this.workingDirectory,
       },
-      registry,
+      agent,
     );
     if (ok) {
       return stdout as string;
