@@ -4,6 +4,7 @@ export {default as ShellCommandTestingResource} from "./ShellCommandTestingResou
 import {TokenRingPackage} from "@tokenring-ai/agent";
 import * as chatCommands from "./chatCommands.ts";
 import * as hooks from "./hooks.ts";
+import * as agents from "./agents.ts";
 import packageJSON from './package.json' with {type: 'json'};
 
 export const packageInfo: TokenRingPackage = {
@@ -11,5 +12,6 @@ export const packageInfo: TokenRingPackage = {
   version: packageJSON.version,
   description: packageJSON.description,
   chatCommands,
-  hooks
+  hooks,
+  agents
 };
