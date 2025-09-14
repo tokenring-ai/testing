@@ -49,7 +49,7 @@ export default class ShellCommandTestingResource extends TestingResource {
       agent,
     );
     if (ok) {
-      return stdout as string;
+      return stdout;
     } else {
       throw new Error(
         [

@@ -1,5 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {ChatMessageStorage} from "@tokenring-ai/ai-client";
+import AIService from "@tokenring-ai/ai-client/AIService";
 import runChat from "@tokenring-ai/ai-client/runChat";
 import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
@@ -25,8 +25,7 @@ export async function execute(remainder: string | undefined, agent: Agent) {
     return;
   }
 
-  const chatMessageStorage =
-    agent.requireFirstServiceByType(ChatMessageStorage);
+  const aiService = agent.requireFirstServiceByType(AIService);
   const testingService = agent.requireFirstServiceByType(TestingService);
 
   let modifyOption: "code" | "test" | "either" = "either";
@@ -61,7 +60,7 @@ export async function execute(remainder: string | undefined, agent: Agent) {
 
   names ??= Object.keys(testResults);
 
-  const currentMessage = chatMessageStorage.getCurrentMessage();
+  const checkpoint = agent.generateCheckpoint();
 
   for (const name of names) {
     const result = testResults[name];
@@ -77,7 +76,7 @@ export async function execute(remainder: string | undefined, agent: Agent) {
 
       const repairPrompt = getRepairPrompt(name, result, modifyOption);
 
-      chatMessageStorage.setCurrentMessage(null);
+      agent.reset(["chat", "history"]);
 
       const [output, response] = await runChat(
         {
@@ -91,7 +90,7 @@ export async function execute(remainder: string | undefined, agent: Agent) {
     }
   }
 
-  chatMessageStorage.setCurrentMessage(currentMessage);
+  agent.restoreCheckpoint(checkpoint);
 }
 
 function getRepairPrompt(

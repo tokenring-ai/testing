@@ -23,7 +23,8 @@ export async function afterTesting(agent: Agent): Promise<void> {
             `Test ${name} did not pass, adding repair order to work queue`,
           );
           workQueueService.enqueue({
-            //stateToCarryForward,
+            //TODO: Should we carry forward state?
+            checkpoint: agent.generateCheckpoint(),
             name: `Repair after ${name} testing failure`,
             input: [
               {
