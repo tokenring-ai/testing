@@ -1,150 +1,250 @@
-@tokenring-ai/testing
+# Testing Package Documentation
 
-Overview
+## Overview
 
-- @tokenring-ai/testing provides a lightweight testing layer for the Token Ring ecosystem. It introduces a TestingService
-  that discovers and runs tests exposed by resources, a base TestingResource to implement custom tests, a
-  ShellCommandTestingResource for command-based checks, and chat commands to run and automatically repair failing tests.
+The `@tokenring-ai/testing` package provides a comprehensive testing framework for AI agents within the TokenRing AI ecosystem. It enables automated and manual testing of codebases, integration with shell commands for executing tests, AI-assisted code repair for failing tests, and hooks for seamless integration into agent workflows. The package is designed to ensure code reliability by running tests after file modifications and automatically queuing repairs when failures occur.
 
-What this package offers
+Key features include:
+- **Testing Resources**: Pluggable components for defining and running tests (e.g., shell commands).
+- **Service Layer**: A central `TestingService` to manage and execute tests across resources.
+- **Chat Commands**: Interactive `/test` and `/repair` commands for manual control.
+- **Automation Hooks**: Automatic test execution and repair queuing post-chat or post-modification.
+- **Repair Agent**: An AI agent specialized in diagnosing and fixing test failures.
 
-- Service: TestingService
-- Discovers resources that extend TestingResource and orchestrates running their tests.
-- Logs progress/results via the ChatService.
-- Stores the latest results and can report whether all tests have passed.
-- Base class: TestingResource (abstract)
-- Implements the test lifecycle and result recording; subclasses implement _runTest(registry) and return output or
-  throw on failure.
-- Resource: ShellCommandTestingResource
-- Runs a shell command as a test with configurable workingDirectory, command, timeoutSeconds, and env.
-- Uses @tokenring-ai/filesystem/tools/runShellCommand under the hood.
-- Chat commands
-- /test [test_name|all] — Run all or selected tests and report results.
-- /repair [--modify code|test|either] [test_name|all] — Run tests and use AI to attempt automatic fixes for failures.
+This package plays a crucial role in maintaining codebase integrity during AI-driven development sessions.
 
-Exports
+## Installation/Setup
 
-- index.ts
-- TestingService
-- ShellCommandTestingResource
-- chatCommands (namespace; provides commands.test and commands.repair)
-- name, description, version
+This package is part of the TokenRing AI monorepo. To use it:
 
-Core Concepts
+1. Ensure you have Node.js (v18+) and npm/yarn installed.
+2. Install dependencies:
+   ```
+   npm install
+   ```
+   or
+   ```
+   yarn install
+   ```
+3. Build the TypeScript code:
+   ```
+   npm run build
+   ```
+   (Assumes a build script in `package.json` compiling to `dist/`.)
+4. In your agent application, import and register the package:
+   ```typescript
+   import { packageInfo } from '@tokenring-ai/testing';
+   // Register with your TokenRing agent/team setup
+   ```
+5. Enable the package in your agent config to activate chat commands, hooks, and agents.
 
-1) TestingService
+Dependencies are managed via `package.json` and include `@tokenring-ai/agent`, `@tokenring-ai/filesystem`, etc. No additional external setup is required beyond the monorepo.
 
-- Type: Service
-- Responsibilities:
-- getTests(registry): returns a map of discovered TestingResource instances keyed by name.
-- runTests({ names? }, registry): runs tests for all discovered resources or only the specified subset. Integrates with
-  ChatService for progress output and returns a map of TestResult objects.
-- getLatestTestResults(): returns the last recorded results per resource.
-- allTestsPassed(registry): convenience method to check if all discovered tests passed according to the latest run.
+## Package Structure
 
-2) TestingResource (abstract)
+The package is organized as follows:
 
-- Type: Resource
-- Responsibilities:
-- _runTest(registry): to be implemented by subclasses; should return a string (output) when passing, or throw to
-  indicate failure.
-- runTest(registry): wraps _runTest, records timing, pass/fail, output or error, and returns the final TestResult.
-- getLatestTestResult(): returns the most recent TestResult for this resource instance.
-- TestResult shape:
-  {
-  startedAt: Date;
-  finishedAt: Date;
-  passed: boolean;
-  output?: string;
-  error?: unknown;
+```
+pkg/testing/
+├── index.ts                 # Main exports and package info
+├── TestingService.ts        # Core service for managing tests
+├── TestingResource.ts       # Abstract base for test resources
+├── ShellCommandTestingResource.ts  # Example resource for shell-based tests
+├── agents/
+│   └── repair.ts            # AI agent config for code repair
+├── hooks/
+│   ├── autoTest.ts          # Hook to run tests after chat completion
+│   └── autoRepair.ts        # Hook to queue repairs after test failures
+├── commands/
+│   ├── test.ts              # /test chat command
+│   └── repair.ts            # /repair chat command
+├── package.json             # Package metadata
+├── tsconfig.json            # TypeScript configuration
+├── README.md                # This documentation
+└── LICENSE                  # License file
+```
+
+## Core Components
+
+### TestingService
+
+The `TestingService` is the central hub for test execution. It registers pluggable `TestingResource` instances and runs tests on demand.
+
+- **Key Methods**:
+  - `registerResource(resource: TestingResource, name: string)`: Registers a testing resource.
+  - `runTests({ names?: string[] }, agent: Agent): Promise<Record<string, TestResult>>`: Runs specified (or all active) tests, returning results.
+    - `names`: Array of resource names to test; omit for all.
+    - Returns: Object mapping resource names to `TestResult` (with `passed`, `name`, `details`).
+  - `getLatestTestResults(): Record<string, TestResult>`: Retrieves the most recent results.
+  - `allTestsPassed(agent: Agent): boolean`: Checks if all active tests passed based on latest results.
+  - `enableResources(names: string[])`: Activates specific resources.
+  - `getAvailableResources(): string[]`: Lists all registered resources.
+
+Resources are managed via a `KeyedRegistryWithMultipleSelection`, allowing selective enabling.
+
+### TestingResource (Abstract)
+
+Base class for defining custom test implementations.
+
+- **Key Methods**:
+  - `runTest(agent: Agent): Promise<TestResult>`: Executes the test and returns a result.
+    - `TestResult`: `{ startedAt: Date, finishedAt: Date, passed: boolean, output?: string, error?: unknown }`.
+  - `_runTest(agent: Agent): Promise<string>`: Abstract method to implement test logic (throws if not overridden).
+  - `getLatestTestResult(): TestResult | undefined`: Gets the last run result.
+
+Subclasses must implement `_runTest` to perform the actual testing.
+
+### ShellCommandTestingResource
+
+A concrete implementation that runs shell commands as tests.
+
+- **Constructor Options**:
+  ```typescript
+  interface ShellCommandTestingResourceOptions {
+    name: string;
+    description?: string;
+    workingDirectory?: string;
+    command: string;
+    timeoutSeconds?: number;  // Default: 60
   }
+  ```
 
-3) ShellCommandTestingResource
+- **Key Behavior**:
+  - Uses `@tokenring-ai/filesystem/tools/runShellCommand` to execute the command.
+  - Passes if `ok: true`; throws error with stdout/stderr on failure.
+  - Example:
+    ```typescript
+    import ShellCommandTestingResource from './ShellCommandTestingResource';
+    const resource = new ShellCommandTestingResource({
+      name: 'npm-test',
+      command: 'npm test',
+      workingDirectory: './project',
+      timeoutSeconds: 120
+    });
+    testingService.registerResource(resource, 'npm-test');
+    ```
 
-- Purpose: Execute a shell command as a test and pass if it exits successfully.
-- Constructor parameters (selected):
-- workingDirectory?: string — directory to run in
-- command: string — command to execute
-- timeoutSeconds?: number — default 60
-- env?: Record<string, string | undefined> — environment variables
-- Behavior: Delegates to runShellCommand({ command, timeoutSeconds, env, workingDirectory }) and treats ok=true as pass;
-  otherwise throws with details.
+### Chat Commands
 
-Chat Commands
+- **/test [test_name|all]**:
+  - Lists available tests if no args.
+  - Runs specific tests or all, reporting pass/fail.
+  - Example: `/test npm-test` or `/test all`.
 
-1) /test [test_name|all]
+- **/repair [--modify code|test|either] [test_name|all]**:
+  - Runs tests, then uses AI to repair failures.
+  - `--modify` specifies what to fix: `code` (fix implementation), `test` (fix test), `either` (AI decides, default).
+  - Enqueues AI chat with repair prompt including test output.
+  - Example: `/repair --modify code all`.
 
-- With no arguments: lists available tests.
-- With one or more names: runs those tests.
-- With "all": runs every discovered test.
+### Hooks
 
-2) /repair [--modify code|test|either] [test_name|all]
+- **autoTest (afterChatComplete)**:
+  - Triggers after agent chat if filesystem is dirty.
+  - Runs all tests across services and logs pass/fail.
 
-- Runs tests like /test. For any failure, invokes the AI client with the "repair" persona to attempt a fix.
-- --modify controls what the AI is allowed to change:
-- code: only fix underlying implementation code
-- test: only fix the test itself
-- either: AI chooses (default)
+- **autoRepair (afterTesting)**:
+  - Triggers after testing if filesystem dirty and failures exist.
+  - Enqueues repair tasks to `WorkQueueService` with checkpoint and failure details.
 
-Usage Examples
+### Repair Agent
 
-1) Create a custom test by subclassing TestingResource
+An AI agent config for autonomous code repair.
 
-import { Registry } from "@tokenring-ai/registry";
-import TestingResource from "@tokenring-ai/testing/TestingResource";
+- **Config**:
+  ```typescript
+  {
+    name: "Code Repair",
+    description: "A code repair bot that auto-repairs code",
+    visual: { color: "green" },
+    ai: {
+      systemPrompt: "You are a code repairing developer assistant... [full prompt for analyzing failures]",
+      temperature: 0.7,
+      topP: 0.8
+    },
+    initialCommands: ["/tools enable @tokenring-ai/filesystem/*"]
+  }
+  ```
+- Activated via work queue or manually; uses tools to inspect/fix code based on test failures.
 
-class APingTest extends TestingResource {
-name = "api:ping";
-description = "Ensure the /ping endpoint responds with 200";
+## Usage Examples
 
-async _runTest(registry: Registry): Promise<string> {
-// perform your check; throw to indicate failure
-const res = await fetch("http://localhost:3000/ping");
-if (!res.ok) throw new Error(`/ping returned ${res.status}`);
-return "Ping OK";
-}
-}
+1. **Registering and Running a Shell Test**:
+   ```typescript
+   import TestingService from '@tokenring-ai/testing/TestingService';
+   import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTestingResource';
+   import { Agent } from '@tokenring-ai/agent';
 
-// Register your resource with the registry used by your app/runtime
-// registry.registerResource(new APingTest({ ...optionalBaseProps }));
+   const testingService = new TestingService();
+   const shellResource = new ShellCommandTestingResource({
+     name: 'build-test',
+     command: 'npm run build',
+   });
+   testingService.registerResource(shellResource, 'build-test');
+   testingService.enableResources(['build-test']);
 
-2) Use ShellCommandTestingResource
+   const agent = new Agent(/* config */);
+   const results = await testingService.runTests({}, agent);
+   console.log(results['build-test'].passed ? 'Build passed!' : 'Build failed');
+   ```
 
-import ShellCommandTestingResource from "@tokenring-ai/testing/ShellCommandTestingResource";
+2. **Using Chat Command for Interactive Testing**:
+   In agent chat: `/test all` – Runs all enabled tests and displays results.
 
-const lintTest = new ShellCommandTestingResource({
-name: "lint",
-description: "Codebase should be lint-clean",
-workingDirectory: process.cwd(),
-command: "npm run lint",
-timeoutSeconds: 120,
-});
+3. **Auto-Repair Workflow**:
+   After file changes in chat, hooks automatically test. If failures:
+   ```typescript
+   // In agent setup, ensure hooks are enabled
+   // Failures trigger /repair-like AI session via queue
+   ```
 
-// registry.registerResource(lintTest);
+## Configuration Options
 
-3) Programmatically run tests via TestingService
+- **Resource Registration**: Enable via `enableResources(names: string[])` in `TestingService`.
+- **Shell Commands**: Customize `command`, `workingDirectory`, `timeoutSeconds` per resource.
+- **Repair Mode**: Use `--modify` flag in `/repair` to control fix target.
+- **Hooks**: Enabled by default in package; customize prompts in agent configs.
+- **Environment Variables**: None specific; relies on agent-level configs (e.g., AI model via `@tokenring-ai/ai-client`).
 
-import { TestingService } from "@tokenring-ai/testing";
+## API Reference
 
-const testingService = new TestingService();
-// registry.registerService(testingService);
-// await testingService.runTests({ names: ["lint", "api:ping"] }, registry);
-// const allGood = testingService.allTestsPassed(registry);
+- **TestingService**:
+  - `runTests(options: {names?: string[]}, agent: Agent): Promise<Record<string, TestResult>>`
+  - `getLatestTestResults(): Record<string, TestResult>`
+  - `allTestsPassed(agent: Agent): boolean`
+  - `registerResource(resource: TestingResource, name: string): void`
 
-Installation
+- **TestingResource**:
+  - `runTest(agent: Agent): Promise<TestResult>`
 
-- This package is part of the Token Ring monorepo and is typically consumed by the runtime.
-- If needed directly, add dependency: "@tokenring-ai/testing": "0.1.0".
-- Ensure peer packages are available in your workspace: @tokenring-ai/registry and @tokenring-ai/chat. For /repair,
-  @tokenring-ai/ai-client must be configured (including a suitable persona named "repair").
+- **ShellCommandTestingResource**:
+  - Constructor: `new ShellCommandTestingResource(options: ShellCommandTestingResourceOptions)`
 
-Notes
+- **Chat Commands**:
+  - `execute(remainder: string, agent: Agent): Promise<void>` (internal)
 
-- Naming: Give each TestingResource a stable, unique name so it can be targeted via /test <name> or /repair <name>.
-- Output: For failures, TestingResource.runTest captures the thrown error and timestamps to aid debugging.
-- Security: /repair executes AI-driven changes according to your configured AI client and personas. Review changes as
-  needed in your environment.
+- **Hooks**:
+  - `afterChatComplete(agent: Agent): Promise<void>` (autoTest)
+  - `afterTesting(agent: Agent): Promise<void>` (autoRepair)
 
-License
+- **Repair Agent Config**: `AgentConfig` object as exported.
 
-- MIT (same as the repository license).
+## Dependencies
+
+- `@tokenring-ai/agent`: Core agent framework.
+- `@tokenring-ai/filesystem`: File operations and shell execution.
+- `@tokenring-ai/utility`: Registry utilities.
+- `@tokenring-ai/ai-client`: AI chat and service integration.
+- `@tokenring-ai/queue`: Work queue for repair tasks.
+
+## Contributing/Notes
+
+- **Testing the Package**: Use the provided shell resources to test your own code; extend `TestingResource` for custom tests (e.g., unit tests via Jest API).
+- **Building**: Run `npm run build` to compile TS to JS.
+- **Known Limitations**: 
+  - Shell tests assume Unix-like environment; Windows may need adjustments.
+  - AI repairs depend on model quality; always review changes.
+  - Auto-repair enqueues tasks but does not execute them immediately—monitor the work queue.
+- Contributions: Fork the repo, add features (e.g., new resources), and submit PRs. Focus on extensibility for diverse testing needs.
+
+For issues or extensions, refer to the TokenRing AI documentation.
