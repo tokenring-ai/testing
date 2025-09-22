@@ -9,7 +9,7 @@ export const description =
 
 export async function execute(remainder: string | undefined, agent: Agent) {
   if (!remainder?.trim()) {
-    const testingService = agent.requireFirstServiceByType(TestingService);
+    const testingService = agent.requireServiceByType(TestingService);
 
     const tests = Array.from(testingService.getActiveResourceNames());
     const testNames = Object.keys(tests);
@@ -25,8 +25,8 @@ export async function execute(remainder: string | undefined, agent: Agent) {
     return;
   }
 
-  const aiService = agent.requireFirstServiceByType(AIService);
-  const testingService = agent.requireFirstServiceByType(TestingService);
+  const aiService = agent.requireServiceByType(AIService);
+  const testingService = agent.requireServiceByType(TestingService);
 
   let modifyOption: "code" | "test" | "either" = "either";
   let testArgs = remainder;

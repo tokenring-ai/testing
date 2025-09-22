@@ -5,23 +5,23 @@ import TestingService from "../TestingService.js";
 export const description = "Runs tests automatically after chat is complete";
 
 export async function afterChatComplete(agent: Agent): Promise<void> {
+  const filesystem = agent.requireServiceByType(FileSystemService);
+  const testingService = agent.requireServiceByType(TestingService);
 
-  const filesystem = agent.requireFirstServiceByType(FileSystemService);
   if (filesystem.dirty) {
-    const testingServices = agent.team.services.getItemsByType(TestingService);
-    for (const testingService of testingServices) {
-      // Run all tests for this testing service
-      const testResults = await testingService.runTests({}, agent);
+    agent.infoLine("Working Directory was updated, running test suite...");
 
-      // Output results
-      for (const [name, result] of Object.entries(testResults)) {
-        if (result.passed) {
-          agent.infoLine(`Test ${name} passed.`);
-        } else {
-          agent.errorLine(
-            `Test ${name} failed, result: \n${result.output}`,
-          );
-        }
+    // Run all tests for this testing service
+    const testResults = await testingService.runTests({}, agent);
+
+    // Output results
+    for (const [name, result] of Object.entries(testResults)) {
+      if (result.passed) {
+        agent.infoLine(`Test ${name} passed.`);
+      } else {
+        agent.errorLine(
+          `Test ${name} failed, result: \n${result.output}`,
+        );
       }
     }
   }

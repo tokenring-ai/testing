@@ -5,7 +5,7 @@ export const description =
   "/test [test_name|all] - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
 
 export async function execute(remainder: string | undefined, agent: Agent) {
-  const testingService = agent.requireFirstServiceByType(TestingService);
+  const testingService = agent.requireServiceByType(TestingService);
 
   const trimmed = remainder?.trim();
 
