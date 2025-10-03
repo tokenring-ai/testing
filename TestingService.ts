@@ -1,57 +1,58 @@
-import {Agent} from "@tokenring-ai/agent";
-import {TokenRingService} from "@tokenring-ai/agent/types";
+import { Agent } from "@tokenring-ai/agent";
+import type { TokenRingService } from "@tokenring-ai/agent/types";
 import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/KeyedRegistryWithMultipleSelection";
-import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
+import TestingResource, {
+	type TestResult as ResourceTestResult,
+} from "./TestingResource.js";
 
 export type TestResult = {
-  passed: boolean;
-  name: string;
-  details?: string;
+	passed: boolean;
+	name: string;
+	details?: string;
 };
 
 export default class TestingService implements TokenRingService {
-  name: string = "TestingService";
-  description: string = "Provides testing functionality";
+	name: string = "TestingService";
+	description: string = "Provides testing functionality";
 
-  #latestTestResults: Record<string, ResourceTestResult> = {};
+	#latestTestResults: Record<string, ResourceTestResult> = {};
 
-  private testRegistry = new KeyedRegistryWithMultipleSelection<TestingResource>();
+	private testRegistry =
+		new KeyedRegistryWithMultipleSelection<TestingResource>();
 
-  registerResource = this.testRegistry.register;
-  getActiveResourceNames = this.testRegistry.getActiveItemNames;
-  enableResources = this.testRegistry.enableItems;
-  getAvailableResources = this.testRegistry.getAllItemNames;
+	registerResource = this.testRegistry.register;
+	getActiveResourceNames = this.testRegistry.getActiveItemNames;
+	enableResources = this.testRegistry.enableItems;
+	getAvailableResources = this.testRegistry.getAllItemNames;
 
+	async runTests(
+		{ names }: { names?: string[] },
+		agent: Agent,
+	): Promise<Record<string, ResourceTestResult>> {
+		const results: Record<string, ResourceTestResult> = {};
+		const testingResources = this.testRegistry.getActiveItemEntries();
+		for (const name in testingResources) {
+			if (names && !names.includes(name)) continue;
 
-  async runTests(
-    {names}: { names?: string[] },
-    agent: Agent,
-  ): Promise<Record<string, ResourceTestResult>> {
+			const testingResource = testingResources[name];
 
-    const results: Record<string, ResourceTestResult> = {};
-    const testingResources = this.testRegistry.getActiveItemEntries();
-    for (const name in testingResources) {
-      if (names && !names.includes(name)) continue;
+			agent.infoLine(`Running tests for resource ${name}...`);
 
-      const testingResource = testingResources[name];
+			results[name] = this.#latestTestResults[name] =
+				await testingResource.runTest(agent);
+		}
 
-      agent.infoLine(`Running tests for resource ${name}...`);
+		return results;
+	}
 
-      results[name] = this.#latestTestResults[name] =
-        await testingResource.runTest(agent);
-    }
+	getLatestTestResults(): Record<string, ResourceTestResult> {
+		return this.#latestTestResults;
+	}
 
-    return results;
-  }
-
-  getLatestTestResults(): Record<string, ResourceTestResult> {
-    return this.#latestTestResults;
-  }
-
-  allTestsPassed(agent: Agent): boolean {
-    const resources = this.testRegistry.getActiveItemEntries();
-    return Object.keys(resources).every(
-      name => this.#latestTestResults[name]?.passed,
-    );
-  }
+	allTestsPassed(agent: Agent): boolean {
+		const resources = this.testRegistry.getActiveItemEntries();
+		return Object.keys(resources).every(
+			(name) => this.#latestTestResults[name]?.passed,
+		);
+	}
 }
