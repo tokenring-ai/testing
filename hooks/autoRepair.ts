@@ -1,8 +1,9 @@
-import { Agent } from "@tokenring-ai/agent";
-import { FileSystemService } from "@tokenring-ai/filesystem";
-import { WorkQueueService } from "@tokenring-ai/queue";
+import {Agent} from "@tokenring-ai/agent";
+import {FileSystemService} from "@tokenring-ai/filesystem";
+import {WorkQueueService} from "@tokenring-ai/queue";
 import TestingService from "../TestingService.js";
 
+export const name = "autoRepair";
 export const description = "Runs repairs automatically after chat is complete";
 
 export async function afterTesting(agent: Agent): Promise<void> {

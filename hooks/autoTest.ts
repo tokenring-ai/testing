@@ -1,7 +1,8 @@
-import { Agent } from "@tokenring-ai/agent";
-import { FileSystemService } from "@tokenring-ai/filesystem";
+import {Agent} from "@tokenring-ai/agent";
+import {FileSystemService} from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
+export const name = "autoTest";
 export const description = "Runs tests automatically after chat is complete";
 
 export async function afterChatComplete(agent: Agent): Promise<void> {
