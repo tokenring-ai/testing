@@ -1,5 +1,5 @@
-import {Agent} from "@tokenring-ai/agent";
-import {FileSystemService} from "@tokenring-ai/filesystem";
+import { Agent } from "@tokenring-ai/agent";
+import { FileSystemService } from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
 export const name = "autoTest";
