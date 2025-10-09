@@ -1,4 +1,4 @@
-import type { AgentConfig } from "@tokenring-ai/agent/Agent";
+import type {AgentConfig} from "@tokenring-ai/agent/types";
 
 export default {
 	name: "Code Repair Engineer",
