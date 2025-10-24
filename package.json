@@ -6,6 +6,7 @@
 		"@tokenring-ai/agent": "0.1.0",
 		"@tokenring-ai/filesystem": "0.1.0",
 		"@tokenring-ai/queue": "0.1.0",
+  "@tokenring-ai/utility": "0.1.0",
 		"glob-gitignore": "^1.0.15"
 	},
 	"devDependencies": {
