@@ -1,4 +1,5 @@
 import type {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
+import {AgentCommandService, AgentConfigService, AgentLifecycleService} from "@tokenring-ai/agent";
 import {z} from "zod";
 import * as agents from "./agents.ts";
 import * as chatCommands from "./chatCommands.ts";
@@ -25,9 +26,15 @@ export default {
   install(agentTeam: AgentTeam) {
     const config = agentTeam.getConfigSlice("testing", TestingConfigSchema);
     if (config) {
-      agentTeam.addChatCommands(chatCommands);
-      agentTeam.addHooks(packageJSON.name, hooks);
-      agentTeam.addAgentConfigs(agents);
+      agentTeam.waitForService(AgentCommandService, agentCommandService =>
+        agentCommandService.addAgentCommands(chatCommands)
+      );
+      agentTeam.waitForService(AgentLifecycleService, lifecycleService =>
+        lifecycleService.addHooks(packageJSON.name, hooks)
+      );
+      agentTeam.waitForService(AgentConfigService, agentConfigService =>
+        agentConfigService.addAgentConfigs(agents)
+      );
       const testingService = new TestingService();
       agentTeam.addServices(testingService);
 

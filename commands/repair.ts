@@ -1,7 +1,7 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import AIService from "@tokenring-ai/ai-client/AIService";
+import {AIService} from "@tokenring-ai/ai-client";
 import runChat from "@tokenring-ai/ai-client/runChat";
-import type { TestResult as ResourceTestResult } from "../TestingResource.js";
+import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
 
 export const description =
