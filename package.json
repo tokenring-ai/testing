@@ -1,25 +1,25 @@
 {
-	"name": "@tokenring-ai/testing",
-	"description": "Service that adds testing tools to the context",
-	"version": "0.1.0",
-	"dependencies": {
-		"@tokenring-ai/agent": "0.1.0",
-		"@tokenring-ai/filesystem": "0.1.0",
-		"@tokenring-ai/queue": "0.1.0",
+ "name": "@tokenring-ai/testing",
+ "description": "Service that adds testing tools to the context",
+ "version": "0.1.0",
+ "dependencies": {
+  "@tokenring-ai/agent": "0.1.0",
+  "@tokenring-ai/filesystem": "0.1.0",
+  "@tokenring-ai/queue": "0.1.0",
   "@tokenring-ai/utility": "0.1.0",
-		"glob-gitignore": "^1.0.15"
-	},
-	"devDependencies": {
-		"typescript": "^5.9.3"
-	},
-	"exports": {
-		".": "./index.ts",
-		"./*": "./*.ts"
-	},
-	"license": "MIT",
-	"scripts": {
-		"build": "tsc -p .",
-		"eslint": "eslint --fix ./"
-	},
-	"type": "module"
+  "glob-gitignore": "^1.0.15"
+ },
+ "devDependencies": {
+  "typescript": "^5.9.3"
+ },
+ "exports": {
+  ".": "./index.ts",
+  "./*": "./*.ts"
+ },
+ "license": "MIT",
+ "scripts": {
+  "build": "tsc -p .",
+  "eslint": "eslint --fix ./"
+ },
+ "type": "module"
 }
