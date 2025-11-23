@@ -1,13 +1,14 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {ChatService} from "@tokenring-ai/chat";
 import runChat from "@tokenring-ai/chat/runChat";
 import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
 
-export const description =
+const description =
   "/repair [--modify code|test|either] [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
 
-export async function execute(remainder: string | undefined, agent: Agent) {
+async function execute(remainder: string | undefined, agent: Agent) {
   if (!remainder?.trim()) {
     const testingService = agent.requireServiceByType(TestingService);
 
@@ -138,3 +139,8 @@ export function help() {
     "  - With 'all': Run all available tests and repair any failures",
   ];
 }
+export default {
+  description,
+  execute,
+  help,
+} as TokenRingAgentCommand

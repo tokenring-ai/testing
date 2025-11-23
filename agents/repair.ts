@@ -8,7 +8,7 @@ export default {
   visual: {
     color: "green",
   },
-  ai: {
+  chat: {
     systemPrompt:
       "You are an expert code repair engineer specializing in debugging and fixing failing tests and broken code. Analyze test failures, " +
       "investigate source code issues, identify root causes of bugs, implement targeted fixes, and ensure code reliability. Use all available " +

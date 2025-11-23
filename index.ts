@@ -1,5 +1,5 @@
-import type {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
-import {AgentCommandService, AgentConfigService, AgentLifecycleService} from "@tokenring-ai/agent";
+import {AgentCommandService, AgentManager, AgentLifecycleService} from "@tokenring-ai/agent";
+import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import * as agents from "./agents.ts";
 import * as chatCommands from "./chatCommands.ts";
@@ -23,20 +23,20 @@ export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(agentTeam: AgentTeam) {
-    const config = agentTeam.getConfigSlice("testing", TestingConfigSchema);
+  install(app: TokenRingApp) {
+    const config = app.getConfigSlice("testing", TestingConfigSchema);
     if (config) {
-      agentTeam.waitForService(AgentCommandService, agentCommandService =>
+      app.waitForService(AgentCommandService, agentCommandService =>
         agentCommandService.addAgentCommands(chatCommands)
       );
-      agentTeam.waitForService(AgentLifecycleService, lifecycleService =>
+      app.waitForService(AgentLifecycleService, lifecycleService =>
         lifecycleService.addHooks(packageJSON.name, hooks)
       );
-      agentTeam.waitForService(AgentConfigService, agentConfigService =>
-        agentConfigService.addAgentConfigs(agents)
+      app.waitForService(AgentManager, agentManager =>
+        agentManager.addAgentConfigs(agents)
       );
       const testingService = new TestingService();
-      agentTeam.addServices(testingService);
+      app.addServices(testingService);
 
       if (config.resources) {
         for (const name in config.resources) {
@@ -56,7 +56,7 @@ export default {
       }
     }
   },
-} as TokenRingPackage;
+} as TokenRingPlugin;
 
 export {default as TestingService} from "./TestingService.ts";
 export {default as ShellCommandTestingResource} from "./ShellCommandTestingResource.ts";

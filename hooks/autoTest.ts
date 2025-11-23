@@ -1,11 +1,12 @@
 import {Agent} from "@tokenring-ai/agent";
+import {HookConfig} from "@tokenring-ai/agent/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
-export const name = "autoTest";
-export const description = "Runs tests automatically after chat is complete";
+const name = "autoTest";
+const description = "Runs tests automatically after chat is complete";
 
-export async function afterChatComplete(agent: Agent): Promise<void> {
+async function afterChatComplete(agent: Agent): Promise<void> {
   const filesystem = agent.requireServiceByType(FileSystemService);
   const testingService = agent.requireServiceByType(TestingService);
 
@@ -25,3 +26,5 @@ export async function afterChatComplete(agent: Agent): Promise<void> {
     }
   }
 }
+
+export default {name, description, afterChatComplete} as HookConfig

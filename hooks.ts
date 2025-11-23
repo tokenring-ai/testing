@@ -1,2 +1,2 @@
-export * as autoRepair from "./hooks/autoRepair.ts";
-export * as autoTest from "./hooks/autoTest.ts";
+export {default as autoRepair} from "./hooks/autoRepair.ts";
+export {default as autoTest} from "./hooks/autoTest.ts";

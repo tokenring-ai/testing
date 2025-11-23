@@ -1,10 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import TestingService from "../TestingService.js";
 
-export const description =
+const description =
   "/test [test_name|all] - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
 
-export async function execute(remainder: string | undefined, agent: Agent) {
+async function execute(remainder: string | undefined, agent: Agent) {
   const testingService = agent.requireServiceByType(TestingService);
 
   const trimmed = remainder?.trim();
@@ -54,3 +55,8 @@ export function help() {
     "  - With 'all': Run all available tests",
   ];
 }
+export default {
+  description,
+  execute,
+  help,
+} as TokenRingAgentCommand
