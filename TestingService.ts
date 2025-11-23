@@ -1,6 +1,6 @@
 import {Agent} from "@tokenring-ai/agent";
 import type {TokenRingService} from "@tokenring-ai/agent/types";
-import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/KeyedRegistryWithMultipleSelection";
+import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/registry/KeyedRegistryWithMultipleSelection";
 import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
 
 export type TestResult = {
