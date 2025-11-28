@@ -1,1 +1,5 @@
-export {default as repair} from "./agents/repair.ts";
+import {default as repair} from "./agents/repair.ts";
+
+export default {
+  repair,
+};

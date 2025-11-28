@@ -1,2 +1,7 @@
-export {default as test} from "./commands/test.js";
-export {default as repair} from "./commands/repair.js";
+import {default as test} from "./commands/test.js";
+import {default as repair} from "./commands/repair.js";
+
+export default {
+  test,
+  repair,
+};

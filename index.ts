@@ -1,9 +1,9 @@
 import {AgentCommandService, AgentManager, AgentLifecycleService} from "@tokenring-ai/agent";
 import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
-import * as agents from "./agents.ts";
-import * as chatCommands from "./chatCommands.ts";
-import * as hooks from "./hooks.ts";
+import agents from "./agents.ts";
+import chatCommands from "./chatCommands.ts";
+import hooks from "./hooks.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import TestingService from "./TestingService.ts";

@@ -6,7 +6,7 @@ import type {TestResult as ResourceTestResult} from "../TestingResource.js";
 import TestingService from "../TestingService.js";
 
 const description =
-  "/repair [--modify code|test|either] [test_name|all] - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
+  "/repair - Run tests and automatically fix failing ones using AI. Shows available tests if name is omitted.";
 
 async function execute(remainder: string | undefined, agent: Agent) {
   if (!remainder?.trim()) {
@@ -127,18 +127,48 @@ ${testOutput}`;
   }
 }
 
-// noinspection JSUnusedGlobalSymbols
-export function help() {
-  return [
-    "/repair [--modify code|test|either] [test_name|all]",
-    "  --modify code: Only repair the underlying code",
-    "  --modify test: Only repair the test code itself",
-    "  --modify either: Let AI decide whether to repair code or tests (default)",
-    "  - With no test arguments: Shows available tests",
-    "  - With test_name: Run specific test and repair if it fails",
-    "  - With 'all': Run all available tests and repair any failures",
-  ];
-}
+const help: string = `# /repair [--modify code|test|either] [test_name|all]
+
+## Description
+
+Run tests and automatically repair failing ones using AI assistance. Tests are executed first, and any failing tests are automatically analyzed and fixed by an AI agent based on the specified repair mode.
+
+## Usage
+
+/repair                                    - Show available tests
+/repair <test_name>                       - Test and repair specific test
+/repair test1 test2                       - Test and repair multiple tests
+/repair all                               - Test and repair all tests
+/repair --modify code <test_name>         - Only repair underlying code
+/repair --modify test <test_name>         - Only repair test code
+/repair --modify either <test_name>       - AI chooses repair approach
+
+## Options
+
+- **--modify code** - AI only modifies the underlying implementation code to make tests pass (default when unspecified)
+- **--modify test** - AI only modifies the test code itself to fix failures
+- **--modify either** - AI determines whether to fix code or tests based on the failure analysis (most flexible)
+
+## Examples
+
+/repair                    - List all available tests
+/repair userAuth           - Test and repair 'userAuth' test
+/repair --modify code userAuth - Only fix the underlying code for userAuth
+/repair --modify test userAuth - Only fix the userAuth test code
+/repair all                - Test and repair all available tests
+/repair --modify either payment auth - Test and repair multiple tests
+
+## Repair Modes
+
+- **code**: Focuses on fixing the actual implementation that's being tested
+- **test**: Focuses on fixing the test logic or assertions
+- **either**: AI intelligently chooses the best approach based on failure
+
+## Output
+
+- **PASSED**: Test completed successfully without repair needed
+- **FAILED**: Test failed, AI repair attempted and completed
+- Shows detailed test output before repair and status after repair`;
 export default {
   description,
   execute,

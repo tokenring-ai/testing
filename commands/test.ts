@@ -3,7 +3,7 @@ import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import TestingService from "../TestingService.js";
 
 const description =
-  "/test [test_name|all] - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
+  "/test - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
 
 async function execute(remainder: string | undefined, agent: Agent) {
   const testingService = agent.requireServiceByType(TestingService);
@@ -46,17 +46,33 @@ async function execute(remainder: string | undefined, agent: Agent) {
   }
 }
 
-// noinspection JSUnusedGlobalSymbols
-export function help() {
-  return [
-    "/test [test_name|all]",
-    "  - With no arguments: Shows available tests",
-    "  - With test_name: Run specific test",
-    "  - With 'all': Run all available tests",
-  ];
-}
+const help: string = `# /test [test_name|all]
+
+## Description
+
+Run tests from the TestingService. Displays available tests when no arguments are provided, runs specific tests when test names are given, or runs all tests when 'all' is specified.
+
+## Usage
+
+/test                    - Show available tests
+/test <test_name>        - Run a specific test
+/test test1 test2        - Run multiple specific tests
+/test all                - Run all available tests
+
+## Examples
+
+/test                    - Lists all available tests
+/test userAuth           - Run the 'userAuth' test
+/test userAuth payment   - Run both 'userAuth' and 'payment' tests
+/test all                - Execute every available test
+
+## Output
+
+- **PASSED**: Test completed successfully
+- **FAILED**: Test failed with error output shown`;
 export default {
   description,
   execute,
   help,
 } as TokenRingAgentCommand
+
