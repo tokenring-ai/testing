@@ -1,13 +1,16 @@
 {
  "name": "@tokenring-ai/testing",
  "description": "Service that adds testing tools to the context",
- "version": "0.1.0",
+ "version": "0.2.0",
  "dependencies": {
-  "@tokenring-ai/agent": "0.1.0",
-  "@tokenring-ai/filesystem": "0.1.0",
-  "@tokenring-ai/queue": "0.1.0",
-  "@tokenring-ai/utility": "0.1.0",
-  "glob-gitignore": "^1.0.15"
+  "@tokenring-ai/app": "0.2.0",
+  "@tokenring-ai/chat": "0.2.0",
+  "@tokenring-ai/agent": "0.2.0",
+  "@tokenring-ai/filesystem": "0.2.0",
+  "@tokenring-ai/queue": "0.2.0",
+  "@tokenring-ai/utility": "0.2.0",
+  "glob-gitignore": "^1.0.15",
+  "zod": "^4.1.13"
  },
  "devDependencies": {
   "typescript": "^5.9.3"
