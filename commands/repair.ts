@@ -77,12 +77,9 @@ async function execute(remainder: string | undefined, agent: Agent) {
 
       agent.reset(["chat", "history"]);
 
-      const [output, response] = await runChat(
-        {
-          input: repairPrompt,
-        },
-        agent,
-      );
+      const chatConfig = chatService.getChatConfig(agent);
+
+      const [output, response] = await runChat(repairPrompt, chatConfig, agent);
 
       agent.infoLine(`${name}: AI repair completed`);
     }

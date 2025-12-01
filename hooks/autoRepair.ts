@@ -28,17 +28,11 @@ async function afterTesting(agent: Agent): Promise<void> {
             //TODO: Should we carry forward state?
             checkpoint: agent.generateCheckpoint(),
             name: `Repair after ${name} testing failure`,
-            input: [
-              {
-                role: "system",
-                content:
-                  "While automatically testing the application code, the following error was encountered. Please repair the error",
-              },
-              {
-                role: "system",
-                content: `-- Test results -- ${result.output}`,
-              },
-            ],
+            input: `
+While automatically testing the application code, the following error was encountered. Please repair the error",
+-- Test results --
+ ${result.output}
+`.trim(),
           },
           agent,
         );
