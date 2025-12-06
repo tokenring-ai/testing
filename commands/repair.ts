@@ -85,7 +85,7 @@ async function execute(remainder: string | undefined, agent: Agent) {
     }
   }
 
-  agent.restoreCheckpoint(checkpoint);
+  agent.restoreState(checkpoint.state);
 }
 
 function getRepairPrompt(
