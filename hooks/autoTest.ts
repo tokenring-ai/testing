@@ -27,4 +27,4 @@ async function afterChatComplete(agent: Agent): Promise<void> {
   }
 }
 
-export default {name, description, afterChatComplete} as HookConfig
+export default {name, description, afterChatComplete} satisfies HookConfig

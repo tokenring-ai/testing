@@ -41,4 +41,4 @@ While automatically testing the application code, the following error was encoun
   }
 }
 
-export default {name, description, afterTesting} as HookConfig;
+export default {name, description, afterTesting} satisfies HookConfig;
