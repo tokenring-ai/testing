@@ -10,10 +10,10 @@
     "@tokenring-ai/queue": "0.2.0",
     "@tokenring-ai/utility": "0.2.0",
     "glob-gitignore": "^1.0.15",
-    "zod": "^4.1.13"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "catalog:"
   },
   "exports": {
     ".": "./index.ts",
