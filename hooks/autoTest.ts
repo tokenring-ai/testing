@@ -6,7 +6,7 @@ import TestingService from "../TestingService.js";
 const name = "autoTest";
 const description = "Runs tests automatically after chat is complete";
 
-async function afterChatComplete(agent: Agent): Promise<void> {
+async function afterChatCompletion(agent: Agent): Promise<void> {
   const filesystem = agent.requireServiceByType(FileSystemService);
   const testingService = agent.requireServiceByType(TestingService);
 
@@ -27,4 +27,4 @@ async function afterChatComplete(agent: Agent): Promise<void> {
   }
 }
 
-export default {name, description, afterChatComplete} satisfies HookConfig
+export default {name, description, afterChatCompletion} satisfies HookConfig
