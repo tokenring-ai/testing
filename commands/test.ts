@@ -74,5 +74,5 @@ export default {
   description,
   execute,
   help,
-} as TokenRingAgentCommand
+} satisfies TokenRingAgentCommand
 
