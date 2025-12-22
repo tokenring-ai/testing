@@ -23,7 +23,7 @@ export default class ShellCommandTestingResource implements TestingResource {
       startedAt,
       finishedAt: Date.now(),
       passed: ok,
-      output: stdout
+      output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${stdout}\n${stderr}`,
     }
   }
 }

@@ -72,6 +72,7 @@ export default class TestingService implements TokenRingService {
       const confirm = await agent.askHuman({
         type: "askForConfirmation",
         message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
+        default: true,
         timeout: repairCount > maxAutoRepairs ? undefined : 30,
       });
 
