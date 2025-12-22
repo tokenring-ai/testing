@@ -83,4 +83,20 @@ export default class TestingService implements TokenRingService {
       }
     }
   }
+
+  /**
+   * Check if all tests have passed for the given agent
+   * @param agent The agent to check test results for
+   * @returns True if all tests passed, false otherwise
+   */
+  allTestsPassed(agent: Agent): boolean {
+    let testResults: Record<string, TestResult> = {};
+    
+    agent.mutateState(TestingState, (state) => {
+      testResults = { ...state.testResults };
+    });
+
+    // Check if all tests passed
+    return Object.values(testResults).every(result => result.passed);
+  }
 }
