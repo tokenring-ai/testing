@@ -13,7 +13,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./index.ts",
@@ -21,8 +22,11 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p .",
-    "eslint": "eslint --fix ./"
+    "build": "tsc --noEmit",
+    "eslint": "eslint --fix ./",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "type": "module"
 }
