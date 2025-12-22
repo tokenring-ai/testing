@@ -13,17 +13,7 @@ async function afterChatCompletion(agent: Agent): Promise<void> {
   if (filesystem.dirty) {
     agent.infoLine("Working Directory was updated, running test suite...");
 
-    // Run all tests for this testing service
-    const testResults = await testingService.runTests({}, agent);
-
-    // Output results
-    for (const [name, result] of Object.entries(testResults)) {
-      if (result.passed) {
-        agent.infoLine(`Test ${name} passed.`);
-      } else {
-        agent.errorLine(`Test ${name} failed, result: \n${result.output}`);
-      }
-    }
+    await testingService.runTests("*",agent);
   }
 }
 

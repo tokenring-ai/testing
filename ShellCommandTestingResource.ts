@@ -1,63 +1,29 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {execute as runShellCommand} from "@tokenring-ai/filesystem/tools/runShellCommand";
-import TestingResource from "./TestingResource.js";
+import {z} from "zod";
+import {shellCommandTestingConfigSchema, TestResult} from "./schema.ts";
+import {TestingResource} from "./TestingResource.ts";
 
-export type TestCommand = {
-  command: string;
-  description?: string;
-};
-
-export type TestResult = {
-  passed: boolean;
-  output: string;
-};
-
-export interface ShellCommandTestingResourceOptions {
-  name: string;
-  description?: string;
-  workingDirectory?: string;
-  command: string;
-  timeoutSeconds?: number;
-}
-
-export default class ShellCommandTestingResource extends TestingResource {
+export default class ShellCommandTestingResource implements TestingResource {
   description: string = "Provides ShellCommandTesting functionality";
-  workingDirectory: string | undefined;
-  command!: string;
-  timeoutSeconds: number = 60;
 
-  constructor({
-                workingDirectory,
-                command,
-                timeoutSeconds,
-                ...params
-              }: ShellCommandTestingResourceOptions) {
-    super();
-    this.workingDirectory = workingDirectory;
-    this.command = command;
-    this.timeoutSeconds = timeoutSeconds ?? 60;
-  }
-
-  async _runTest(agent: Agent): Promise<string> {
+  constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>) {}
+  async runTest(agent: Agent): Promise<TestResult> {
+    const startedAt = Date.now();
     const {ok, stdout, stderr} = await runShellCommand(
       {
-        command: this.command,
-        timeoutSeconds: this.timeoutSeconds,
-        workingDirectory: this.workingDirectory,
+        command: this.options.command,
+        timeoutSeconds: this.options.timeoutSeconds,
+        workingDirectory: this.options.workingDirectory,
       },
       agent,
     );
-    if (ok) {
-      return stdout;
-    } else {
-      throw new Error(
-        [
-          `Command ${this.command} threw error ${stderr}, stderr:`,
-          stderr,
-          "\nstdout: ",
-          stdout,
-        ].join("\n"),
-      );
+
+    return {
+      startedAt,
+      finishedAt: Date.now(),
+      passed: ok,
+      output: stdout
     }
   }
 }

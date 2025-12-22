@@ -1,75 +1,59 @@
 import Agent from "@tokenring-ai/agent/Agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import createSubcommandRouter from "@tokenring-ai/agent/util/subcommandRouter";
 import TestingService from "../TestingService.js";
 
 const description =
-  "/test - Run all or a specific test from any TestingService. Shows available tests if name is omitted.";
+  "/test - Run all or a specific test from the TestingService. Shows available tests if name is omitted.";
 
-async function execute(remainder: string | undefined, agent: Agent) {
+const execute = createSubcommandRouter({
+  list,
+  run
+});
+
+async function list(remainder: string, agent: Agent) {
   const testingService = agent.requireServiceByType(TestingService);
-
-  const trimmed = remainder?.trim();
-
-  // No arguments: list available tests
-  if (!trimmed) {
-    const available = Array.from(testingService.getActiveResourceNames());
-    if (available.length === 0) {
-      agent.infoLine("No tests available.");
-    } else {
-      agent.infoLine("Available tests: " + available.join(", "));
-    }
-    return;
-  }
-
-  // Determine which tests to run
-  let names: string[] | undefined;
-  if (trimmed === "all") {
-    // Run all tests – leave names undefined to let runTests handle it
-    names = undefined;
+  const available = Array.from(testingService.getAvailableResources());
+  if (available.length === 0) {
+    agent.infoLine("No tests available.");
   } else {
-    names = trimmed.split(/\s+/).filter((n) => n.length > 0);
-  }
-
-  const testResults = await testingService.runTests({names}, agent);
-
-  // Output results for requested tests (or all if 'all')
-  const outputNames = names ?? Object.keys(testResults);
-  for (const name of outputNames) {
-    const result = testResults[name];
-    if (!result) continue; // unknown test name
-    if (result.passed) {
-      agent.infoLine(`${name}: PASSED`);
-    } else {
-      agent.errorLine(`${name}: FAILED`);
-      if (result.output) agent.errorLine(result.output);
-    }
+    agent.infoLine("Available tests:\n" + available.map(name => ` - ${name}`).join('\n'));
   }
 }
 
-const help: string = `# /test [test_name|all]
+async function run(remainder: string, agent: Agent) {
+  const testingService = agent.requireServiceByType(TestingService);
+  const trimmed = remainder?.trim() || "*";
+
+  await testingService.runTests(trimmed, agent);
+}
+
+const help: string = `# /test list
+# /test run [test_name|*]
 
 ## Description
 
-Run tests from the TestingService. Displays available tests when no arguments are provided, runs specific tests when test names are given, or runs all tests when 'all' is specified.
+Lists or runs user-defined tests.
+
+  If tests fail, the agent will track the results and may offer to automatically repair the issues, provided the maximum auto-repair limit hasn't been reached.
 
 ## Usage
 
-/test                    - Show available tests
-/test <test_name>        - Run a specific test
-/test test1 test2        - Run multiple specific tests
-/test all                - Run all available tests
+/test list               - Show all available tests
+/test run <test_name>    - Run a specific test
+/test run                - Run all available tests (default)
 
 ## Examples
 
-/test                    - Lists all available tests
-/test userAuth           - Run the 'userAuth' test
-/test userAuth payment   - Run both 'userAuth' and 'payment' tests
-/test all                - Execute every available test
+/test list               - Lists all available tests
+/test run userAuth       - Run the 'userAuth' test
+/test run                - Execute every available test
 
 ## Output
 
 - **PASSED**: Test completed successfully
-- **FAILED**: Test failed with error output shown`;
+- **FAILED**: Test failed; error details and repair options may be provided`;
+
 export default {
   description,
   execute,

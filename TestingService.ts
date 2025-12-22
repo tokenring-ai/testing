@@ -1,57 +1,88 @@
 import {Agent} from "@tokenring-ai/agent";
 
 import {TokenRingService} from "@tokenring-ai/app/types";
-import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/registry/KeyedRegistryWithMultipleSelection";
-import TestingResource, {type TestResult as ResourceTestResult,} from "./TestingResource.js";
-
-export type TestResult = {
-  passed: boolean;
-  name: string;
-  details?: string;
-};
+import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+import {z} from "zod";
+import {testingConfigSchema, TestResult, TestResult as ResourceTestResult, testResultSchema} from "./schema.ts";
+import {TestingState} from "./state/testingState.ts";
+import type {TestingResource} from "./TestingResource.ts";
 
 export default class TestingService implements TokenRingService {
   name: string = "TestingService";
   description: string = "Provides testing functionality";
 
-  #latestTestResults: Record<string, ResourceTestResult> = {};
-
-  private testRegistry =
-    new KeyedRegistryWithMultipleSelection<TestingResource>();
+  private testRegistry = new KeyedRegistry<TestingResource>();
 
   registerResource = this.testRegistry.register;
-  getActiveResourceNames = this.testRegistry.getActiveItemNames;
-  enableResources = this.testRegistry.enableItems;
   getAvailableResources = this.testRegistry.getAllItemNames;
 
+  constructor(private config: z.output<typeof testingConfigSchema>) {}
+  attach(agent: Agent) {
+    agent.initializeState(TestingState, { maxAutoRepairs: this.config.maxAutoRepairs });
+  }
   async runTests(
-    {names}: { names?: string[] },
+    likeName: string,
     agent: Agent,
-  ): Promise<Record<string, ResourceTestResult>> {
-    const results: Record<string, ResourceTestResult> = {};
-    const testingResources = this.testRegistry.getActiveItemEntries();
-    for (const name in testingResources) {
-      if (names && !names.includes(name)) continue;
+  ): Promise<void> {
 
-      const testingResource = testingResources[name];
+    const selectedTests = this.testRegistry.getItemEntriesLike(likeName);
 
-      agent.infoLine(`Running tests for resource ${name}...`);
-
-      results[name] = this.#latestTestResults[name] =
-        await testingResource.runTest(agent);
+    if (selectedTests.length === 0) {
+      agent.infoLine(`No tests found matching "${likeName}".`);
+      return;
     }
 
-    return results;
-  }
+    const results: Record<string, TestResult> = {};
 
-  getLatestTestResults(): Record<string, ResourceTestResult> {
-    return this.#latestTestResults;
-  }
+    let failureReport = "";
+    for (const [name, testingResource] of selectedTests) {
+      await agent.busyWhile(`Running test ${name}`, async () => {
+        const result = results[name] = await testingResource.runTest(agent);
 
-  allTestsPassed(agent: Agent): boolean {
-    const resources = this.testRegistry.getActiveItemEntries();
-    return Object.keys(resources).every(
-      (name) => this.#latestTestResults[name]?.passed,
-    );
+        if (result.error) {
+          agent.errorLine(`[Test: ${name}] : FAILED`);
+        } else {
+          agent.infoLine(`[Test: ${name}] : PASSED`);
+        }
+
+        if (!result.passed) {
+          failureReport += `[${name}]\n${result.output}\n\n`;
+        }
+      });
+    }
+
+    if (failureReport === '') {
+      agent.chatOutput(`All tests passed!\n`);
+      return;
+    }
+
+    if (failureReport === '') {
+      agent.mutateState(TestingState, (state) => {
+        Object.assign(state.testResults, results);
+        state.repairCount = 0;
+      })
+      agent.chatOutput(`All tests passed!\n`);
+      return;
+    } else {
+      let repairCount!: number;
+      let maxAutoRepairs!: number;
+      agent.mutateState(TestingState, (state) => {
+        Object.assign(state.testResults, results);
+        repairCount = ++state.repairCount;
+        maxAutoRepairs = state.maxAutoRepairs;
+      })
+
+      const confirm = await agent.askHuman({
+        type: "askForConfirmation",
+        message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
+        timeout: repairCount > maxAutoRepairs ? undefined : 30,
+      });
+
+      if (confirm) {
+        agent.handleInput({
+          message: "After running the test suite, the following tests failed"
+        });
+      }
+    }
   }
 }
