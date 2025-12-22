@@ -39,13 +39,10 @@ export default class TestingService implements TokenRingService {
       await agent.busyWhile(`Running test ${name}`, async () => {
         const result = results[name] = await testingResource.runTest(agent);
 
-        if (result.error) {
-          agent.errorLine(`[Test: ${name}] : FAILED`);
-        } else {
+        if (result.passed) {
           agent.infoLine(`[Test: ${name}] : PASSED`);
-        }
-
-        if (!result.passed) {
+        } else {
+          agent.errorLine(`[Test: ${name}] : FAILED`);
           failureReport += `[${name}]\n${result.output}\n\n`;
         }
       });
@@ -79,8 +76,9 @@ export default class TestingService implements TokenRingService {
       });
 
       if (confirm) {
+        agent.infoLine(`Attempting to repair errors...`);
         agent.handleInput({
-          message: "After running the test suite, the following tests failed"
+          message: `After running the test suite, the following tests failed: ${failureReport}`
         });
       }
     }
