@@ -3,7 +3,7 @@ import {Agent} from "@tokenring-ai/agent";
 import {TokenRingService} from "@tokenring-ai/app/types";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {z} from "zod";
-import {testingConfigSchema, TestResult, TestResult as ResourceTestResult, testResultSchema} from "./schema.ts";
+import {testingConfigSchema, TestResult} from "./schema.ts";
 import {TestingState} from "./state/testingState.ts";
 import type {TestingResource} from "./TestingResource.ts";
 
