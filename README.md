@@ -10,8 +10,8 @@ The `@tokenring-ai/testing` package enables automated and manual testing of code
 
 - **Testing Resources**: Pluggable components for defining and running tests (shell commands, custom resources)
 - **Service Layer**: Central `TestingService` for managing and executing tests across resources
-- **Chat Commands**: Interactive `/test` and `/repair` commands for manual control
-- **Automation Hooks**: Automatic test execution and repair queuing after file modifications
+- **Chat Commands**: Interactive `/test` command for manual control
+- **Automation Hooks**: Automatic test execution after file modifications
 - **AI Repair Agent**: Specialized agent for diagnosing and fixing test failures
 - **Configuration-Based Setup**: Declarative resource configuration through plugin system
 - **State Management**: Checkpoint-based state preservation during repair workflows
@@ -23,11 +23,11 @@ This package is part of the TokenRing AI monorepo. To use it:
 1. Ensure you have Node.js (v18+) and npm/yarn installed
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 3. Build the TypeScript code:
    ```bash
-   npm run build
+   bun run build
    ```
 
 ### Package Integration
@@ -44,11 +44,11 @@ import { packageInfo } from '@tokenring-ai/testing';
 The testing package uses a Zod-based configuration schema for declarative setup:
 
 ```typescript
-const TestingConfigSchema = z.object({
-  resources: z.record(z.string(), z.any()).optional(),
-  default: z.object({
-    resources: z.array(z.string()),
-  }).optional(),
+import { testingConfigSchema } from '@tokenring-ai/testing';
+import { z } from 'zod';
+
+const TestingConfigSchema = testingConfigSchema.extend({
+  // Optional custom configuration
 });
 ```
 
@@ -61,22 +61,20 @@ Configure testing resources through your application config:
   "testing": {
     "resources": {
       "build-test": {
-        "type": "shell-testing",
+        "type": "shell",
         "name": "build-test",
-        "command": "npm run build",
+        "command": "bun run build",
         "workingDirectory": "./project",
         "timeoutSeconds": 120
       },
       "unit-tests": {
-        "type": "shell-testing", 
+        "type": "shell", 
         "name": "unit-tests",
-        "command": "npm test",
+        "command": "bun test",
         "workingDirectory": "./project"
       }
     },
-    "default": {
-      "resources": ["build-test", "unit-tests"]
-    }
+    "maxAutoRepairs": 3
   }
 }
 ```
@@ -94,34 +92,29 @@ The central service for managing and executing tests across all registered resou
 **Key Methods:**
 
 - `registerResource(name: string, resource: TestingResource)`: Register a testing resource
-- `enableResources(names: string[])`: Enable specific resources for execution
-- `getActiveResourceNames(): string[]`: Get currently enabled resource names
 - `getAvailableResources(): string[]`: Get all registered resource names
-- `runTests({names?: string[]}, agent: Agent): Promise<Record<string, TestResult>>`: Execute tests
-- `getLatestTestResults(): Record<string, TestResult>`: Retrieve most recent results
+- `runTests(likeName: string, agent: Agent)`: Execute tests matching the given pattern
 - `allTestsPassed(agent: Agent): boolean`: Check if all tests passed
 
 **Example:**
 ```typescript
 const testingService = agent.requireServiceByType(TestingService);
-const results = await testingService.runTests({}, agent);
+await testingService.runTests("*", agent);
 ```
 
-### TestingResource (Abstract)
+### TestingResource (Interface)
 
-Base class for implementing custom test resources.
+Base interface for implementing custom test resources.
 
 **Key Methods:**
 
 - `runTest(agent: Agent): Promise<TestResult>`: Execute the test
-- `getLatestTestResult(): TestResult | undefined`: Get last execution result
-- `_runTest(agent: Agent): Promise<string>`: Abstract method for test implementation
 
 **TestResult Interface:**
 ```typescript
 interface TestResult {
-  startedAt: Date;
-  finishedAt: Date;
+  startedAt: number;
+  finishedAt: number;
   passed: boolean;
   output?: string;
   error?: unknown;
@@ -149,7 +142,7 @@ import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTesti
 
 const resource = new ShellCommandTestingResource({
   name: 'build-test',
-  command: 'npm run build',
+  command: 'bun run build',
   workingDirectory: './project',
   timeoutSeconds: 120
 });
@@ -166,46 +159,20 @@ Run tests interactively through the chat interface.
 **Usage:**
 - `/test` - Show available tests
 - `/test <test_name>` - Run specific test
-- `/test <test1> <test2>` - Run multiple tests
-- `/test all` - Run all available tests
+- `/test <test1> <test2>` - Run multiple tests (using wildcard pattern matching)
+- `/test *` - Run all available tests
 
 **Examples:**
 ```bash
 /test                    # Lists all available tests
 /test build-test         # Run the 'build-test' resource
-/test build-test unit-tests  # Run multiple specific tests
-/test all                # Execute every available test
+/test build-test unit-tests  # Run multiple specific tests using pattern matching
+/test *                # Execute every available test
 ```
 
 **Output:**
 - `PASSED`: Test completed successfully
 - `FAILED`: Test failed with error output shown
-
-### /repair Command
-
-Run tests and automatically repair failures using AI assistance.
-
-**Usage:**
-```bash
-/repair                                    # Show available tests
-/repair <test_name>                       # Test and repair specific test
-/repair all                               # Test and repair all tests
-/repair --modify code <test_name>         # Only repair underlying code
-/repair --modify test <test_name>         # Only repair test code
-/repair --modify either <test_name>       # AI chooses repair approach
-```
-
-**Repair Modes:**
-- `--modify code`: AI only modifies the underlying implementation
-- `--modify test`: AI only modifies the test code
-- `--modify either`: AI determines the best approach (default)
-
-**Examples:**
-```bash
-/repair userAuth           # Test and repair 'userAuth' test
-/repair --modify code all  # Only fix underlying code for all tests
-/repair --modify test payment auth  # Only fix test code for specific tests
-```
 
 ## Automation Hooks
 
@@ -222,18 +189,10 @@ Automatically runs tests after chat completion when files have been modified.
 3. Reports pass/fail status for each test
 4. Logs results to agent output
 
-### autoRepair Hook
-
-Automatically queues repair tasks when tests fail after file modifications.
-
-**Trigger:** `afterTesting`
-**Condition:** Tests failed and filesystem is dirty
-
-**Behavior:**
-1. Analyzes test results from TestingService
-2. Identifies failed tests
-3. Enqueues repair tasks to WorkQueueService
-4. Includes checkpoint and failure details for repair agent
+**Test Failure Handling:**
+- If tests fail, the system tracks failures
+- Offers to automatically repair when `maxAutoRepairs` limit not reached
+- Enqueues repair tasks to WorkQueueService with failure details
 
 ## AI Repair Agent
 
@@ -259,8 +218,6 @@ A specialized background agent for autonomous code repair.
 **Capabilities:**
 - Test failure analysis and root cause identification
 - Code debugging and bug fixing
-- Test updates when appropriate
-- Quality assurance and reliability validation
 - Minimal, targeted fixes that preserve existing functionality
 
 ## Plugin Integration
@@ -289,20 +246,19 @@ The package automatically integrates through the TokenRing plugin system:
 import TestingService from '@tokenring-ai/testing/TestingService';
 import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTestingResource';
 
-const testingService = new TestingService();
+const testingService = new TestingService(/* config */);
 const shellResource = new ShellCommandTestingResource({
   name: 'build-test',
-  command: 'npm run build',
+  command: 'bun run build',
   workingDirectory: './project',
   timeoutSeconds: 120
 });
 
 testingService.registerResource('build-test', shellResource);
-testingService.enableResources(['build-test']);
 
 const agent = new Agent(/* config */);
-const results = await testingService.runTests({}, agent);
-console.log(results['build-test'].passed ? 'Build passed!' : 'Build failed');
+await testingService.runTests("build-test", agent);
+console.log(testingService.allTestsPassed(agent) ? 'All tests passed!' : 'Some tests failed');
 ```
 
 ### Interactive Testing Workflow
@@ -310,8 +266,7 @@ console.log(results['build-test'].passed ? 'Build passed!' : 'Build failed');
 ```bash
 # In agent chat:
 /test                    # See available tests
-/test all                # Run all tests
-/repair --modify code all  # Test and repair any failures
+/test *                  # Run all tests
 ```
 
 ### Automated Repair Workflow
@@ -320,7 +275,7 @@ console.log(results['build-test'].passed ? 'Build passed!' : 'Build failed');
 // Hook integration - automatically triggers when:
 // 1. File modifications detected (filesystem.dirty = true)
 // 2. Tests run via autoTest hook
-// 3. Failures detected by autoRepair hook
+// 3. Failures detected
 // 4. Repair tasks queued to WorkQueueService
 
 // Repair agent automatically:
@@ -340,36 +295,25 @@ class TestingService implements TokenRingService {
   description: string = "Provides testing functionality";
   
   registerResource(name: string, resource: TestingResource): void
-  enableResources(names: string[]): void
-  getActiveResourceNames(): string[]
   getAvailableResources(): string[]
-  
-  runTests(
-    {names?: string[]}, 
-    agent: Agent
-  ): Promise<Record<string, TestResult>>
-  
-  getLatestTestResults(): Record<string, TestResult>
+  runTests(likeName: string, agent: Agent): Promise<void>
   allTestsPassed(agent: Agent): boolean
 }
 ```
 
-### TestingResource
+### TestingResource (Interface)
 
 ```typescript
-abstract class TestingResource {
-  async runTest(agent: Agent): Promise<TestResult>
-  getLatestTestResult(): TestResult | undefined
-  
-  // Abstract method - implement in subclasses
-  async _runTest(agent: Agent): Promise<string>
+interface TestingResource {
+  description: string;
+  runTest: (agent: Agent) => Promise<TestResult>;
 }
 ```
 
 ### ShellCommandTestingResource
 
 ```typescript
-class ShellCommandTestingResource extends TestingResource {
+class ShellCommandTestingResource implements TestingResource {
   constructor(options: ShellCommandTestingResourceOptions)
   
   // Properties
@@ -408,26 +352,16 @@ interface TokenRingAgentCommand {
 
 ## Development
 
-### Building
+### Testing
 
 ```bash
-npm run build
-# Compiles TypeScript to JavaScript
+bun run test
+# Run tests
+bun run test:watch
+# Run tests in watch mode
+bun run test:coverage
+# Run tests with coverage
 ```
-
-### Linting
-
-```bash
-npm run eslint
-# Lints and fixes code style issues
-```
-
-### Testing Your Own Code
-
-1. Configure resources in your application config
-2. Use shell command resources for existing test suites
-3. Extend `TestingResource` for custom test implementations
-4. Integrate with hooks for automated testing
 
 ### Known Limitations
 
