@@ -92,7 +92,7 @@ The central service for managing and executing tests across all registered resou
 **Key Methods:**
 
 - `registerResource(name: string, resource: TestingResource)`: Register a testing resource
-- `getAvailableResources(): string[]`: Get all registered resource names
+- `getAvailableResources(): string[]`: Get all registered resource names  
 - `runTests(likeName: string, agent: Agent)`: Execute tests matching the given pattern
 - `allTestsPassed(agent: Agent): boolean`: Check if all tests passed
 
@@ -294,10 +294,10 @@ class TestingService implements TokenRingService {
   name: string = "TestingService";
   description: string = "Provides testing functionality";
   
-  registerResource(name: string, resource: TestingResource): void
-  getAvailableResources(): string[]
-  runTests(likeName: string, agent: Agent): Promise<void>
-  allTestsPassed(agent: Agent): boolean
+  registerResource: (name: string, resource: TestingResource) => void
+  getAvailableResources: () => string[]
+  runTests: (likeName: string, agent: Agent) => Promise<void>
+  allTestsPassed: (agent: Agent) => boolean
 }
 ```
 
@@ -329,8 +329,18 @@ class ShellCommandTestingResource implements TestingResource {
 ```typescript
 interface TokenRingAgentCommand {
   description: string
-  execute(remainder: string | undefined, agent: Agent): Promise<void>
+  execute: (remainder: string | undefined, agent: Agent) => Promise<void>
   help: string
+}
+```
+
+### Hooks
+
+```typescript
+interface HookConfig {
+  name: string;
+  description: string;
+  afterChatCompletion: (agent: Agent) => Promise<void>;
 }
 ```
 
