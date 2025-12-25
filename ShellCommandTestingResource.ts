@@ -1,5 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {execute as runShellCommand} from "@tokenring-ai/filesystem/tools/runShellCommand";
+import {execute as bash} from "@tokenring-ai/filesystem/tools/bash";
 import {z} from "zod";
 import {shellCommandTestingConfigSchema, TestResult} from "./schema.ts";
 import {TestingResource} from "./TestingResource.ts";
@@ -10,7 +10,7 @@ export default class ShellCommandTestingResource implements TestingResource {
   constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>) {}
   async runTest(agent: Agent): Promise<TestResult> {
     const startedAt = Date.now();
-    const {ok, stdout, stderr} = await runShellCommand(
+    const {ok, stdout, stderr} = await bash(
       {
         command: this.options.command,
         timeoutSeconds: this.options.timeoutSeconds,

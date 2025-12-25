@@ -10,7 +10,7 @@ async function afterChatCompletion(agent: Agent): Promise<void> {
   const filesystem = agent.requireServiceByType(FileSystemService);
   const testingService = agent.requireServiceByType(TestingService);
 
-  if (filesystem.dirty) {
+  if (filesystem.isDirty(agent)) {
     agent.infoLine("Working Directory was updated, running test suite...");
 
     await testingService.runTests("*",agent);
