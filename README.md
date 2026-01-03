@@ -1,10 +1,10 @@
 # @tokenring-ai/testing
 
-A comprehensive testing framework for AI agents within the TokenRing AI ecosystem that provides automated testing, AI-powered code repair, and seamless integration with agent workflows.
+A testing framework for AI agents within the TokenRing AI ecosystem that provides automated testing capabilities and seamless integration with agent workflows.
 
 ## Overview
 
-The `@tokenring-ai/testing` package enables automated and manual testing of codebases with AI-assisted repair capabilities. It integrates shell command execution for tests, provides intelligent failure analysis and repair through specialized agents, and includes automation hooks for seamless workflow integration.
+The `@tokenring-ai/testing` package enables automated and manual testing of codebases. It integrates shell command execution for tests and includes automation hooks for seamless workflow integration.
 
 ### Key Features
 
@@ -12,7 +12,6 @@ The `@tokenring-ai/testing` package enables automated and manual testing of code
 - **Service Layer**: Central `TestingService` for managing and executing tests across resources
 - **Chat Commands**: Interactive `/test` command for manual control
 - **Automation Hooks**: Automatic test execution after file modifications
-- **AI Repair Agent**: Specialized agent for diagnosing and fixing test failures
 - **Configuration-Based Setup**: Declarative resource configuration through plugin system
 - **State Management**: Checkpoint-based state preservation during repair workflows
 
@@ -32,12 +31,14 @@ This package is part of the TokenRing AI monorepo. To use it:
 
 ### Package Integration
 
-To integrate the testing package in your agent application:
+To integrate the testing package into your application, import the plugin and add it to your app:
 
 ```typescript
-import { packageInfo } from '@tokenring-ai/testing';
-// The package auto-registers through the plugin system
+import testingPlugin from '@tokenring-ai/testing/plugin';
+app.addPlugin(testingPlugin);
 ```
+
+This registers all required services, commands, and hooks automatically.
 
 ## Configuration
 
@@ -74,7 +75,7 @@ Configure testing resources through your application config:
         "workingDirectory": "./project"
       }
     },
-    "maxAutoRepairs": 3
+    "maxAutoRepairs": 5
   }
 }
 ```
@@ -92,7 +93,7 @@ The central service for managing and executing tests across all registered resou
 **Key Methods:**
 
 - `registerResource(name: string, resource: TestingResource)`: Register a testing resource
-- `getAvailableResources(): string[]`: Get all registered resource names  
+- `getAvailableResources()`: Get all registered resource names
 - `runTests(likeName: string, agent: Agent)`: Execute tests matching the given pattern
 - `allTestsPassed(agent: Agent): boolean`: Check if all tests passed
 
@@ -105,6 +106,14 @@ await testingService.runTests("*", agent);
 ### TestingResource (Interface)
 
 Base interface for implementing custom test resources.
+
+**Interface Definition:**
+```typescript
+interface TestingResource {
+  description: string;
+  runTest: (agent: Agent) => Promise<TestResult>;
+}
+```
 
 **Key Methods:**
 
@@ -128,11 +137,12 @@ Concrete implementation for running shell commands as tests.
 **Constructor Options:**
 ```typescript
 interface ShellCommandTestingResourceOptions {
+  type: "shell";
   name: string;
   description?: string;
   workingDirectory?: string;
   command: string;
-  timeoutSeconds?: number; // Default: 60
+  timeoutSeconds?: number;
 }
 ```
 
@@ -141,6 +151,7 @@ interface ShellCommandTestingResourceOptions {
 import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTestingResource';
 
 const resource = new ShellCommandTestingResource({
+  type: "shell",
   name: 'build-test',
   command: 'bun run build',
   workingDirectory: './project',
@@ -157,17 +168,14 @@ testingService.registerResource('build-test', resource);
 Run tests interactively through the chat interface.
 
 **Usage:**
-- `/test` - Show available tests
-- `/test <test_name>` - Run specific test
-- `/test <test1> <test2>` - Run multiple tests (using wildcard pattern matching)
-- `/test *` - Run all available tests
+- `/test list` - Show available tests
+- `/test run <test_name|*>` - Run specific tests or all tests
 
 **Examples:**
 ```bash
-/test                    # Lists all available tests
-/test build-test         # Run the 'build-test' resource
-/test build-test unit-tests  # Run multiple specific tests using pattern matching
-/test *                # Execute every available test
+/test list                    # Lists all available tests
+/test run build-test          # Run the 'build-test' resource
+/test run *                   # Execute every available test
 ```
 
 **Output:**
@@ -192,33 +200,7 @@ Automatically runs tests after chat completion when files have been modified.
 **Test Failure Handling:**
 - If tests fail, the system tracks failures
 - Offers to automatically repair when `maxAutoRepairs` limit not reached
-- Enqueues repair tasks to WorkQueueService with failure details
-
-## AI Repair Agent
-
-A specialized background agent for autonomous code repair.
-
-**Agent Configuration:**
-```typescript
-{
-  name: "Code Repair Engineer",
-  description: "Call this agent to fix failing tests and repair broken code...",
-  category: "Quality & Operations",
-  type: "background",
-  visual: { color: "green" },
-  chat: {
-    systemPrompt: "You are an expert code repair engineer specializing in debugging and fixing failing tests...",
-    temperature: 0.2,
-    topP: 0.7,
-  },
-  initialCommands: ["/tools enable @tokenring-ai/filesystem/*"]
-}
-```
-
-**Capabilities:**
-- Test failure analysis and root cause identification
-- Code debugging and bug fixing
-- Minimal, targeted fixes that preserve existing functionality
+- Handles repair input directly to the agent
 
 ## Plugin Integration
 
@@ -227,16 +209,8 @@ The package automatically integrates through the TokenRing plugin system:
 **Registration:**
 1. Registers chat commands with `AgentCommandService`
 2. Registers hooks with `AgentLifecycleService`
-3. Registers repair agent with `AgentManager`
-4. Auto-registers `TestingService` with application
-5. Configures resources based on application config
-
-**Service Dependencies:**
-- `@tokenring-ai/agent`: Core agent framework
-- `@tokenring-ai/chat`: Chat command processing
-- `@tokenring-ai/filesystem`: File system operations and shell execution
-- `@tokenring-ai/queue`: Work queue for repair tasks
-- `@tokenring-ai/utility`: Registry utilities
+3. Auto-registers `TestingService` with application
+4. Configures resources based on application config
 
 ## Usage Examples
 
@@ -248,6 +222,7 @@ import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTesti
 
 const testingService = new TestingService(/* config */);
 const shellResource = new ShellCommandTestingResource({
+  type: "shell",
   name: 'build-test',
   command: 'bun run build',
   workingDirectory: './project',
@@ -265,8 +240,8 @@ console.log(testingService.allTestsPassed(agent) ? 'All tests passed!' : 'Some t
 
 ```bash
 # In agent chat:
-/test                    # See available tests
-/test *                  # Run all tests
+/test list              # See available tests
+/test run *             # Run all tests
 ```
 
 ### Automated Repair Workflow
@@ -276,13 +251,12 @@ console.log(testingService.allTestsPassed(agent) ? 'All tests passed!' : 'Some t
 // 1. File modifications detected (filesystem.dirty = true)
 // 2. Tests run via autoTest hook
 // 3. Failures detected
-// 4. Repair tasks queued to WorkQueueService
+// 4. User prompted for repair confirmation
 
-// Repair agent automatically:
-// 1. Analyzes test failures
-// 2. Investigates source code issues
-// 3. Implements targeted fixes
-// 4. Validates repairs work correctly
+// If user confirms repair:
+// 1. Agent receives failure details
+// 2. Agent attempts to fix issues
+// 3. Tests run again to verify repair
 ```
 
 ## API Reference
@@ -295,7 +269,7 @@ class TestingService implements TokenRingService {
   description: string = "Provides testing functionality";
   
   registerResource: (name: string, resource: TestingResource) => void
-  getAvailableResources: () => string[]
+  getAvailableResources: () => Iterable<string>
   runTests: (likeName: string, agent: Agent) => Promise<void>
   allTestsPassed: (agent: Agent) => boolean
 }
@@ -318,9 +292,7 @@ class ShellCommandTestingResource implements TestingResource {
   
   // Properties
   description: string
-  workingDirectory: string | undefined
-  command: string
-  timeoutSeconds: number
+  readonly options: ShellCommandTestingResourceOptions
 }
 ```
 
@@ -344,21 +316,23 @@ interface HookConfig {
 }
 ```
 
-## Dependencies
+## State Management
 
-**Runtime Dependencies:**
-- `@tokenring-ai/agent`: Core agent framework
-- `@tokenring-ai/chat`: Chat command processing
-- `@tokenring-ai/filesystem`: File operations and shell execution
-- `@tokenring-ai/queue`: Work queue for repair tasks
-- `@tokenring-ai/utility`: Registry utilities
-- `@tokenring-ai/app`: Application framework
-- `glob-gitignore`: Pattern matching utilities
-- `zod`: Schema validation
+The TestingService manages state through the `TestingState` class:
 
-**Development Dependencies:**
-- `typescript`: TypeScript compilation
-- `vitest`: Testing framework
+```typescript
+class TestingState implements AgentStateSlice {
+  name: string = "TestingState";
+  testResults: Record<string, TestResult> = {};
+  repairCount: number = 0;
+  maxAutoRepairs: number;
+}
+```
+
+**State Preservation:**
+- Test results are persisted across sessions
+- Repair count is tracked to prevent infinite loops
+- State can be serialized and deserialized for checkpoint recovery
 
 ## Development
 
@@ -376,9 +350,8 @@ bun run test:coverage
 ### Known Limitations
 
 - Shell tests assume Unix-like environment (Windows may need adjustments)
-- AI repair quality depends on model capabilities
-- Auto-repair enqueues tasks but doesn't execute immediately
-- Repair execution depends on work queue processing
+- Repair quality depends on agent capabilities
+- Auto-repair prompts user but execution depends on user confirmation
 - File system modification detection requires proper integration
 
 ### Contributing
@@ -390,3 +363,7 @@ bun run test:coverage
 5. Submit pull requests
 
 For issues or feature requests, refer to the TokenRing AI documentation and community guidelines.
+
+## License
+
+MIT License - see LICENSE file for details.
