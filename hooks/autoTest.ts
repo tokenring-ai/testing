@@ -11,7 +11,7 @@ async function afterChatCompletion(agent: Agent): Promise<void> {
   const testingService = agent.requireServiceByType(TestingService);
 
   if (filesystem.isDirty(agent)) {
-    agent.infoLine("Working Directory was updated, running test suite...");
+    agent.infoMessage("Working Directory was updated, running test suite...");
 
     await testingService.runTests("*",agent);
   }

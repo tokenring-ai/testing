@@ -6,8 +6,8 @@ export default async function list(_remainder: string, agent: Agent): Promise<vo
   const available = Array.from(testingService.getAvailableResources());
   
   if (available.length === 0) {
-    agent.infoLine("No tests available.");
+    agent.infoMessage("No tests available.");
   } else {
-    agent.infoLine("Available tests:\n" + available.map(name => ` - ${name}`).join('\n'));
+    agent.infoMessage("Available tests:\n" + available.map(name => ` - ${name}`).join('\n'));
   }
 }

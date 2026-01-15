@@ -28,7 +28,7 @@ export default class TestingService implements TokenRingService {
     const selectedTests = this.testRegistry.getItemEntriesLike(likeName);
 
     if (selectedTests.length === 0) {
-      agent.infoLine(`No tests found matching "${likeName}".`);
+      agent.infoMessage(`No tests found matching "${likeName}".`);
       return;
     }
 
@@ -40,9 +40,9 @@ export default class TestingService implements TokenRingService {
         const result = results[name] = await testingResource.runTest(agent);
 
         if (result.passed) {
-          agent.infoLine(`[Test: ${name}] : PASSED`);
+          agent.infoMessage(`[Test: ${name}] : PASSED`);
         } else {
-          agent.errorLine(`[Test: ${name}] : FAILED`);
+          agent.errorMessage(`[Test: ${name}] : FAILED`);
           failureReport += `[${name}]\n${result.output}\n\n`;
         }
       });
@@ -77,7 +77,7 @@ export default class TestingService implements TokenRingService {
       });
 
       if (confirm) {
-        agent.infoLine(`Attempting to repair errors...`);
+        agent.infoMessage(`Attempting to repair errors...`);
         agent.handleInput({
           message: `After running the test suite, the following tests failed: ${failureReport}`
         });
