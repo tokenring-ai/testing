@@ -10,11 +10,17 @@ export const testResultSchema = z.object({
 
 export type TestResult = z.infer<typeof testResultSchema>;
 
-export const testingConfigSchema = z
+export const TestingAgentConfigSchema = z.object({
+  maxAutoRepairs: z.number().optional(),
+}).default({});
+
+export const TestingServiceConfigSchema = z
   .object({
+    agentDefaults: z.object({
+      maxAutoRepairs: z.number().default(5),
+    }).prefault({}),
     resources: z.record(z.string(), z.any()).optional(),
-    maxAutoRepairs: z.number().default(5),
-  });
+  }).strict().prefault({});
 
 export const shellCommandTestingConfigSchema = z.object({
   type: z.literal("shell"),

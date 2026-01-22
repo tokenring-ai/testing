@@ -1,9 +1,10 @@
 import {Agent} from "@tokenring-ai/agent";
 
 import {TokenRingService} from "@tokenring-ai/app/types";
+import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {z} from "zod";
-import {testingConfigSchema, TestResult} from "./schema.ts";
+import {TestingAgentConfigSchema, TestingServiceConfigSchema, TestResult} from "./schema.ts";
 import {TestingState} from "./state/testingState.ts";
 import type {TestingResource} from "./TestingResource.ts";
 
@@ -16,10 +17,12 @@ export default class TestingService implements TokenRingService {
   registerResource = this.testRegistry.register;
   getAvailableResources = this.testRegistry.getAllItemNames;
 
-  constructor(private config: z.output<typeof testingConfigSchema>) {}
-  attach(agent: Agent) {
-    agent.initializeState(TestingState, { maxAutoRepairs: this.config.maxAutoRepairs });
+  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {}
+  attach(agent: Agent): void {
+    const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice('testing', TestingAgentConfigSchema));
+    agent.initializeState(TestingState, config);
   }
+
   async runTests(
     likeName: string,
     agent: Agent,

@@ -1,19 +1,29 @@
 import {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
 import {AgentStateSlice} from "@tokenring-ai/agent/types";
-import type {TestResult} from "../schema.ts";
+import {z} from "zod";
+import {TestingServiceConfigSchema, type TestResult} from "../schema.ts";
 
-export class TestingState implements AgentStateSlice {
+const serializationSchema = z.object({
+  testResults: z.record(z.string(), z.any()),
+  repairCount: z.number(),
+  maxAutoRepairs: z.number()
+});
+
+export class TestingState implements AgentStateSlice<typeof serializationSchema> {
   name = "TestingState";
+  serializationSchema = serializationSchema;
   testResults: Record<string, TestResult> = {};
   repairCount = 0;
   maxAutoRepairs: number;
 
-  constructor({ maxAutoRepairs }: { maxAutoRepairs: number }) {
-    this.maxAutoRepairs = maxAutoRepairs;
+
+  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
+    this.maxAutoRepairs = initialConfig.maxAutoRepairs;
   }
+
   reset(what: ResetWhat[]): void {}
 
-  serialize(): object {
+  serialize(): z.output<typeof serializationSchema> {
     return {
       testResults: this.testResults,
       repairCount: this.repairCount,
@@ -21,8 +31,8 @@ export class TestingState implements AgentStateSlice {
     };
   }
 
-  deserialize(data: any): void {
-    this.testResults = data.testResults;
+  deserialize(data: z.output<typeof serializationSchema>): void {
+    this.testResults = data.testResults as Record<string, TestResult>;
     this.repairCount = data.repairCount;
     this.maxAutoRepairs = data.maxAutoRepairs;
   }

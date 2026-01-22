@@ -4,12 +4,12 @@ import {z} from "zod";
 import chatCommands from "./chatCommands.ts";
 import hooks from "./hooks.ts";
 import packageJSON from "./package.json" with {type: "json"};
-import {shellCommandTestingConfigSchema, testingConfigSchema} from "./schema.ts";
+import {shellCommandTestingConfigSchema, TestingServiceConfigSchema} from "./schema.ts";
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import TestingService from "./TestingService.ts";
 
 const packageConfigSchema = z.object({
-  testing: testingConfigSchema.optional()
+  testing: TestingServiceConfigSchema.optional()
 });
 
 export default {
