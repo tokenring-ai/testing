@@ -4,6 +4,7 @@ import {FileSystemService} from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
 const name = "autoTest";
+const displayName = "Testing/Auto Test";
 const description = "Runs tests automatically after chat is complete";
 
 async function afterChatCompletion(agent: Agent): Promise<void> {
@@ -17,4 +18,4 @@ async function afterChatCompletion(agent: Agent): Promise<void> {
   }
 }
 
-export default {name, description, afterChatCompletion} satisfies HookConfig
+export default {name, displayName, description, afterChatCompletion} satisfies HookConfig
