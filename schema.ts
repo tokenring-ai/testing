@@ -28,5 +28,6 @@ export const shellCommandTestingConfigSchema = z.object({
   description: z.string().optional(),
   workingDirectory: z.string().optional(),
   command: z.string(),
-  timeoutSeconds: z.number().optional(),
+  timeoutSeconds: z.number().default(120),
+  cropOutput: z.number().default(10000)
 })

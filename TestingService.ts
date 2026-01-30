@@ -81,7 +81,7 @@ export default class TestingService implements TokenRingService {
       if (confirm) {
         agent.infoMessage(`Attempting to repair errors...`);
         agent.handleInput({
-          message: `After running the test suite, the following tests failed: ${failureReport}`
+          message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`
         });
       }
     }

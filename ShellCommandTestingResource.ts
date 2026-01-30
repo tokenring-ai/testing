@@ -1,5 +1,5 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {FileSystemService} from "@tokenring-ai/filesystem";
+import {TerminalService} from "@tokenring-ai/terminal";
 import {z} from "zod";
 import {shellCommandTestingConfigSchema, TestResult} from "./schema.ts";
 import {TestingResource} from "./TestingResource.ts";
@@ -9,10 +9,10 @@ export default class ShellCommandTestingResource implements TestingResource {
 
   constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>) {}
   async runTest(agent: Agent): Promise<TestResult> {
-    const filesystem = agent.requireServiceByType(FileSystemService);
+    const terminal = agent.requireServiceByType(TerminalService);
     const startedAt = Date.now();
 
-    const bashResult = await filesystem.executeCommand(
+    const bashResult = await terminal.runScript(
       this.options.command,
       {
         timeoutSeconds: this.options.timeoutSeconds,
@@ -20,13 +20,14 @@ export default class ShellCommandTestingResource implements TestingResource {
       },
       agent,
     );
-    const {ok, stdout, stderr} = bashResult;
+
+    const output = bashResult.stdout.trim().substring(0, this.options.cropOutput);
 
     return {
       startedAt,
         finishedAt: Date.now(),
-      passed: ok,
-      output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${stdout}\n${stderr}`,
+      passed: bashResult.ok,
+      output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${output}`,
     }
   }
 }
