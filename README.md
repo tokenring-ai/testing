@@ -169,6 +169,7 @@ interface ShellCommandTestingResourceOptions {
   workingDirectory?: string;
   command: string;
   timeoutSeconds?: number;
+  cropOutput?: number;
 }
 ```
 
@@ -281,6 +282,7 @@ interface shellCommandTestingConfigSchema {
   workingDirectory?: string;
   command: string;
   timeoutSeconds?: number;
+  cropOutput?: number;
 }
 
 // Agent configuration slice
@@ -517,7 +519,8 @@ const shellCommandTestingConfigSchema = z.object({
   description: z.string().optional(),
   workingDirectory: z.string().optional(),
   command: z.string(),
-  timeoutSeconds: z.number().optional()
+  timeoutSeconds: z.number().optional(),
+  cropOutput: z.number().default(10000)
 });
 
 // Agent configuration slice
@@ -605,44 +608,44 @@ bun run test:coverage     # Run tests with coverage
 - File system modification detection requires proper integration with FileSystemService
 - Only shell resource type is currently provided; custom resources can be implemented
 
-### Dependencies
+## Dependencies
 
-- `zod`: Runtime type validation for configuration schemas
+- `@tokenring-ai/app`: Application framework and plugin system
+- `@tokenring-ai/chat`: Chat service integration
 - `@tokenring-ai/agent`: Agent framework and command system
 - `@tokenring-ai/filesystem`: File system operations and shell command execution
+- `@tokenring-ai/terminal`: Terminal service for shell command execution
+- `@tokenring-ai/queue`: Queue service for task management
 - `@tokenring-ai/utility`: Utility classes including KeyedRegistry for resource management
-- `@tokenring-ai/app`: Application framework and plugin system
 - `glob-gitignore`: Gitignore pattern support for glob operations
+- `zod`: Runtime type validation for configuration schemas
 
-### Package Structure
+## Package Structure
 
 ```
 pkg/testing/
-├── ChatCommands/          # Chat command definitions
-│   └── test/
-│       ├── list.ts
-│       └── run.ts
-├── hooks.ts               # Hook exports
-├── hooks/
-│   └── autoTest.ts        # autoTest hook implementation
-├── commands.ts            # Command exports
+├── chatCommands.ts          # Chat command exports
 ├── commands/
 │   └── test/
-│       └── test.ts        # /test command
+│       ├── list.ts          # /test list subcommand
+│       ├── run.ts           # /test run subcommand
+│       └── test.ts          # /test command definition
+├── hooks.ts                 # Hook exports
+├── hooks/
+│   └── autoTest.ts          # autoTest hook implementation
 ├── state/
-│   └── testingState.ts    # TestingState class
-├── TestingResource.ts     # TestingResource interface
+│   └── testingState.ts      # TestingState class
+├── TestingResource.ts       # TestingResource interface
 ├── ShellCommandTestingResource.ts
 ├── TestingService.ts
-├── schema.ts              # Zod schemas for configuration
-├── plugin.ts              # Plugin registration
-├── index.ts               # Public exports
-├── package.json           # Dependencies and scripts
-└── tsconfig.json          # TypeScript configuration
-
+├── schema.ts                # Zod schemas for configuration
+├── plugin.ts                # Plugin registration
+├── index.ts                 # Public exports
+├── package.json             # Dependencies and scripts
+└── vitest.config.ts         # Vitest configuration
 ```
 
-### Contributing
+## Contributing
 
 1. Fork the repository
 2. Add new testing resource types
