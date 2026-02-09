@@ -9,7 +9,7 @@ import {TestingState} from "./state/testingState.ts";
 import type {TestingResource} from "./TestingResource.ts";
 
 export default class TestingService implements TokenRingService {
-  name: string = "TestingService";
+  readonly name: string = "TestingService";
   description: string = "Provides testing functionality";
 
   private testRegistry = new KeyedRegistry<TestingResource>();
@@ -72,7 +72,7 @@ export default class TestingService implements TokenRingService {
         maxAutoRepairs = state.maxAutoRepairs;
       })
 
-      const confirm = await agent.askForConfirmation({
+      const confirm = await agent.askForApproval({
         message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
         default: true,
         timeout: repairCount > maxAutoRepairs ? undefined : 30,

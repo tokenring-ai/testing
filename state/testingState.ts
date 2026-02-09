@@ -1,4 +1,3 @@
-import {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
 import {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {TestingServiceConfigSchema, type TestResult} from "../schema.ts";
@@ -10,7 +9,7 @@ const serializationSchema = z.object({
 });
 
 export class TestingState implements AgentStateSlice<typeof serializationSchema> {
-  name = "TestingState";
+  readonly name = "TestingState";
   serializationSchema = serializationSchema;
   testResults: Record<string, TestResult> = {};
   repairCount = 0;
@@ -20,8 +19,6 @@ export class TestingState implements AgentStateSlice<typeof serializationSchema>
   constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
     this.maxAutoRepairs = initialConfig.maxAutoRepairs;
   }
-
-  reset(what: ResetWhat[]): void {}
 
   serialize(): z.output<typeof serializationSchema> {
     return {
