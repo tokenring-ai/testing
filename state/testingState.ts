@@ -38,10 +38,14 @@ export class TestingState implements AgentStateSlice<typeof serializationSchema>
     return [
       "Test Results:",
       ...Object.entries(this.testResults).map(([name, result]) => {
-        if (result.error) {
-          return `[Test: ${name}]: FAILED\n${result.error}`;
-        } else {
+        if (result.status === "passed") {
           return `[Test: ${name}]: PASSED`;
+        } else if (result.status === "failed") {
+          return `[Test: ${name}]: FAILED\n${result.output}`;
+        } else if (result.status === "timeout") {
+          return `[Test: ${name}]: TIMEOUT`;
+        } else {
+          return `[Test: ${name}]: ERROR\n${result.error}`;
         }
       }),
       "",

@@ -1,12 +1,30 @@
 import {z} from "zod";
 
-export const testResultSchema = z.object({
-  startedAt: z.number(),
-  finishedAt: z.number(),
-  passed: z.boolean(),
-  output: z.string().optional(),
-  error: z.unknown().optional(),
-});
+export const testResultSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("passed"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    output: z.string().optional(),
+  }),
+  z.object({
+    status: z.literal("failed"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    output: z.string(),
+  }),
+  z.object({
+    status: z.literal("timeout"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+  }),
+  z.object({
+    status: z.literal("error"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    error: z.string(),
+  }),
+]);
 
 export type TestResult = z.infer<typeof testResultSchema>;
 

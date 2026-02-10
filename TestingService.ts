@@ -42,11 +42,15 @@ export default class TestingService implements TokenRingService {
       await agent.busyWhile(`Running test ${name}`, async () => {
         const result = results[name] = await testingResource.runTest(agent);
 
-        if (result.passed) {
+        if (result.status === "passed") {
           agent.infoMessage(`[Test: ${name}] : PASSED`);
-        } else {
+        } else if (result.status === "failed") {
           agent.errorMessage(`[Test: ${name}] : FAILED`);
           failureReport += `[${name}]\n${result.output}\n\n`;
+        } else if (result.status === "timeout") {
+          agent.errorMessage(`[Test: ${name}] : TIMEOUT`);
+        } else {
+          agent.errorMessage(`[Test: ${name}] : ERROR`);
         }
       });
     }
@@ -57,33 +61,29 @@ export default class TestingService implements TokenRingService {
     }
 
     if (failureReport === '') {
-      agent.mutateState(TestingState, (state) => {
-        Object.assign(state.testResults, results);
-        state.repairCount = 0;
-      })
       agent.chatOutput(`All tests passed!\n`);
       return;
-    } else {
-      let repairCount!: number;
-      let maxAutoRepairs!: number;
-      agent.mutateState(TestingState, (state) => {
-        Object.assign(state.testResults, results);
-        repairCount = ++state.repairCount;
-        maxAutoRepairs = state.maxAutoRepairs;
-      })
+    }
 
-      const confirm = await agent.askForApproval({
-        message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
-        default: true,
-        timeout: repairCount > maxAutoRepairs ? undefined : 30,
+    let repairCount!: number;
+    let maxAutoRepairs!: number;
+    agent.mutateState(TestingState, (state) => {
+      Object.assign(state.testResults, results);
+      repairCount = ++state.repairCount;
+      maxAutoRepairs = state.maxAutoRepairs;
+    })
+
+    const confirm = await agent.askForApproval({
+      message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
+      default: true,
+      timeout: repairCount > maxAutoRepairs ? undefined : 30,
+    });
+
+    if (confirm) {
+      agent.infoMessage(`Attempting to repair errors...`);
+      agent.handleInput({
+        message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`
       });
-
-      if (confirm) {
-        agent.infoMessage(`Attempting to repair errors...`);
-        agent.handleInput({
-          message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`
-        });
-      }
     }
   }
 
@@ -99,7 +99,6 @@ export default class TestingService implements TokenRingService {
       testResults = { ...state.testResults };
     });
 
-    // Check if all tests passed
-    return Object.values(testResults).every(result => result.passed);
+    return Object.values(testResults).every(result => result.status === "passed");
   }
 }

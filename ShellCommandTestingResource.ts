@@ -21,13 +21,43 @@ export default class ShellCommandTestingResource implements TestingResource {
       agent,
     );
 
-    const output = bashResult.stdout.trim().substring(0, this.options.cropOutput);
+    const finishedAt = Date.now();
 
-    return {
-      startedAt,
-        finishedAt: Date.now(),
-      passed: bashResult.ok,
-      output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${output}`,
+    if (bashResult.status === "success") {
+      agent.infoMessage(`Finished running ${this.options.command} in ${this.options.workingDirectory}. Status: Passed`);
+      return {
+        status: "passed" as const,
+        startedAt,
+        finishedAt,
+        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, this.options.cropOutput)}`,
+      };
     }
+
+    if (bashResult.status === "badExitCode") {
+      agent.errorMessage(`Finished running ${this.options.command} in ${this.options.workingDirectory}. Status: Failed`);
+      return {
+        status: "failed" as const,
+        startedAt,
+        finishedAt,
+        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, this.options.cropOutput)}`,
+      };
+    }
+
+    if (bashResult.status === "timeout") {
+      agent.errorMessage(`Test ${this.options.command} timed out`);
+      return {
+        status: "timeout" as const,
+        startedAt,
+        finishedAt,
+      };
+    }
+
+    agent.errorMessage(`Test ${this.options.command} encountered an error`);
+    return {
+      status: "error" as const,
+      startedAt,
+      finishedAt,
+      error: bashResult.error,
+    };
   }
 }
