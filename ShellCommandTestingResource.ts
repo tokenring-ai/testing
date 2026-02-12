@@ -24,7 +24,6 @@ export default class ShellCommandTestingResource implements TestingResource {
     const finishedAt = Date.now();
 
     if (bashResult.status === "success") {
-      agent.infoMessage(`Finished running ${this.options.command} in ${this.options.workingDirectory}. Status: Passed`);
       return {
         status: "passed" as const,
         startedAt,
@@ -34,7 +33,6 @@ export default class ShellCommandTestingResource implements TestingResource {
     }
 
     if (bashResult.status === "badExitCode") {
-      agent.errorMessage(`Finished running ${this.options.command} in ${this.options.workingDirectory}. Status: Failed`);
       return {
         status: "failed" as const,
         startedAt,
@@ -44,7 +42,6 @@ export default class ShellCommandTestingResource implements TestingResource {
     }
 
     if (bashResult.status === "timeout") {
-      agent.errorMessage(`Test ${this.options.command} timed out`);
       return {
         status: "timeout" as const,
         startedAt,
@@ -52,7 +49,6 @@ export default class ShellCommandTestingResource implements TestingResource {
       };
     }
 
-    agent.errorMessage(`Test ${this.options.command} encountered an error`);
     return {
       status: "error" as const,
       startedAt,

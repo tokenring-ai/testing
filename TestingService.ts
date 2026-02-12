@@ -31,11 +31,13 @@ export default class TestingService implements TokenRingService {
     const selectedTests = this.testRegistry.getItemEntriesLike(likeName);
 
     if (selectedTests.length === 0) {
-      agent.infoMessage(`No tests found matching "${likeName}".`);
+      agent.chatOutput(`No tests found matching \`${likeName}\`.`);
       return;
     }
 
     const results: Record<string, TestResult> = {};
+
+    agent.chatOutput(`### Running tests...\n`);
 
     let failureReport = "";
     for (const [name, testingResource] of selectedTests) {
@@ -43,25 +45,20 @@ export default class TestingService implements TokenRingService {
         const result = results[name] = await testingResource.runTest(agent);
 
         if (result.status === "passed") {
-          agent.infoMessage(`[Test: ${name}] : PASSED`);
+          agent.chatOutput(`- **[Test: ${name}]** : ✅ PASSED`);
         } else if (result.status === "failed") {
-          agent.errorMessage(`[Test: ${name}] : FAILED`);
-          failureReport += `[${name}]\n${result.output}\n\n`;
+          agent.chatOutput(`- **[Test: ${name}]** : ❌ FAILED`);
+          failureReport += `#### ${name}\n\`\`\`\n${result.output}\n\`\`\`\n\n`;
         } else if (result.status === "timeout") {
-          agent.errorMessage(`[Test: ${name}] : TIMEOUT`);
+          agent.chatOutput(`- **[Test: ${name}]** : ⏳ TIMEOUT`);
         } else {
-          agent.errorMessage(`[Test: ${name}] : ERROR`);
+          agent.chatOutput(`- **[Test: ${name}]** : ⚠️ ERROR`);
         }
       });
     }
 
     if (failureReport === '') {
-      agent.chatOutput(`All tests passed!\n`);
-      return;
-    }
-
-    if (failureReport === '') {
-      agent.chatOutput(`All tests passed!\n`);
+      agent.chatOutput(`\n**All tests passed!** ✨`);
       return;
     }
 
