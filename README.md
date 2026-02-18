@@ -147,11 +147,11 @@ interface TestingResource {
 
 ```typescript
 interface TestResult {
+  status: "passed" | "failed" | "timeout" | "error";
   startedAt: number;
   finishedAt: number;
-  passed: boolean;
   output?: string;
-  error?: unknown;
+  error?: string;
 }
 ```
 
@@ -172,6 +172,11 @@ interface ShellCommandTestingResourceOptions {
   cropOutput?: number;
 }
 ```
+
+**Default Values:**
+
+- `timeoutSeconds`: 120 seconds
+- `cropOutput`: 10000 characters
 
 **Example:**
 
@@ -211,8 +216,10 @@ Run tests interactively through the chat interface.
 
 **Output:**
 
-- `PASSED`: Test completed successfully
-- `FAILED`: Test failed; error details and repair options may be provided
+- `✅ PASSED`: Test completed successfully
+- `❌ FAILED`: Test failed; error details and repair options may be provided
+- `⏳ TIMEOUT`: Test timed out
+- `⚠️ ERROR`: Test encountered an error
 
 ## Automation Hooks
 
@@ -377,7 +384,7 @@ for (const name in parsedConfig.resources) {
 // 2. autoTest hook executes after chat completion
 // 3. Tests run via testingService.runTests("*", agent)
 // 4. Failures detected and repairCount < maxAutoRepairs
-// 5. User confirms repair through agent.askForConfirmation()
+// 5. User confirms repair through agent.askForApproval()
 
 // If user confirms repair:
 // 1. Agent receives failure details from agent.handleInput()
@@ -403,18 +410,17 @@ class CustomTestingResource implements TestingResource {
       const result = await this.performTest(agent);
 
       return {
+        status: "passed" as const,
         startedAt,
         finishedAt: Date.now(),
-        passed: result.success,
         output: result.output
       };
     } catch (error) {
       return {
+        status: "error" as const,
         startedAt,
         finishedAt: Date.now(),
-        passed: false,
-        output: '',
-        error
+        error: String(error)
       };
     }
   }
@@ -472,11 +478,11 @@ class ShellCommandTestingResource implements TestingResource {
 
 ```typescript
 interface TestResult {
+  status: "passed" | "failed" | "timeout" | "error"
   startedAt: number
   finishedAt: number
-  passed: boolean
   output?: string
-  error?: unknown
+  error?: string
 }
 ```
 
@@ -519,7 +525,7 @@ const shellCommandTestingConfigSchema = z.object({
   description: z.string().optional(),
   workingDirectory: z.string().optional(),
   command: z.string(),
-  timeoutSeconds: z.number().optional(),
+  timeoutSeconds: z.number().default(120),
   cropOutput: z.number().default(10000)
 });
 
@@ -527,6 +533,33 @@ const shellCommandTestingConfigSchema = z.object({
 const TestingAgentConfigSchema = z.object({
   maxAutoRepairs: z.number().optional()
 }).default({});
+
+// Test result union type
+const testResultSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("passed"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    output: z.string().optional(),
+  }),
+  z.object({
+    status: z.literal("failed"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    output: z.string(),
+  }),
+  z.object({
+    status: z.literal("timeout"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+  }),
+  z.object({
+    status: z.literal("error"),
+    startedAt: z.number(),
+    finishedAt: z.number(),
+    error: z.string(),
+  }),
+]);
 ```
 
 ## State Management
@@ -581,7 +614,7 @@ The `show()` method returns a formatted string array showing:
 - Test results with PASS/FAIL status
 - Error information if a test failed
 - Total repair count
-- Structure: `["Test Results:", "[Test: name]: PASSED/FAILED\nerror", "", "Total Repairs: N"]`
+- Structure: `["Test Results:", "[Test: name]: PASSED/FAILED/TIMEOUT/ERROR\nerror", "", "Total Repairs: N"]`
 
 **State Preservation:**
 
