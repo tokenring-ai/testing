@@ -1,5 +1,5 @@
 import test from "./commands/test.js";
 
-export default {
+export default [
   test,
-};
+];

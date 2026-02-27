@@ -37,6 +37,7 @@ Lists or runs user-defined tests.
 - **FAILED**: Test failed; error details and repair options may be provided`;
 
 export default {
+  name: "test",
   description,
   execute,
   help,
