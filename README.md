@@ -19,7 +19,7 @@ The `@tokenring-ai/testing` package enables automated and manual testing of code
 
 This package is part of the TokenRing AI monorepo. To use it:
 
-1. Ensure you have Node.js (v18+) and npm/yarn installed
+1. Ensure you have Bun installed
 2. Install dependencies:
    ```bash
    bun install
@@ -97,23 +97,27 @@ const agentConfig = {
 };
 ```
 
-### Environment Variables
-
-No specific environment variables required. The package integrates with your existing agent configuration and AI model setup through `@tokenring-ai/ai-client`.
-
 ## Core Components
 
 ### TestingService
 
 The central service for managing and executing tests across all registered resources.
 
+**Implements:** `TokenRingService`
+
 **Key Methods:**
 
-- `registerResource(name: string, resource: TestingResource)`: Register a testing resource
-- `getAvailableResources()`: Get all registered resource names (returns Iterable<string>)
-- `runTests(likeName: string, agent: Agent)`: Execute tests matching the given pattern
-- `allTestsPassed(agent: Agent): boolean`: Check if all tests passed for the given agent
-- `attach(agent: Agent)`: Initialize agent state with testing configuration
+- `registerResource(name: string, resource: TestingResource): void` - Register a testing resource
+- `getAvailableResources(): Iterable<string>` - Get all registered resource names
+- `runTests(likeName: string, agent: Agent): Promise<void>` - Execute tests matching the given pattern
+- `allTestsPassed(agent: Agent): boolean` - Check if all tests passed for the given agent
+- `attach(agent: Agent): void` - Initialize agent state with testing configuration
+
+**Properties:**
+
+- `name: string` - Service name ("TestingService")
+- `description: string` - Service description ("Provides testing functionality")
+- `options: z.output<typeof TestingServiceConfigSchema>` - Service configuration options
 
 **Example:**
 
@@ -141,7 +145,7 @@ interface TestingResource {
 
 **Key Methods:**
 
-- `runTest(agent: Agent): Promise<TestResult>`: Execute the test
+- `runTest(agent: Agent): Promise<TestResult>` - Execute the test
 
 **TestResult Interface:**
 
@@ -158,6 +162,8 @@ interface TestResult {
 ### ShellCommandTestingResource
 
 Concrete implementation for running shell commands as tests.
+
+**Implements:** `TestingResource`
 
 **Constructor Options:**
 
@@ -178,6 +184,11 @@ interface ShellCommandTestingResourceOptions {
 - `timeoutSeconds`: 120 seconds
 - `cropOutput`: 10000 characters
 
+**Properties:**
+
+- `description: string` - Resource description ("Provides ShellCommandTesting functionality")
+- `options: z.output<typeof shellCommandTestingConfigSchema>` - Resource configuration
+
 **Example:**
 
 ```typescript
@@ -196,14 +207,29 @@ testingService.registerResource('build-test', resource);
 
 ## Chat Commands
 
-### /test Command
+### /test list Command
+
+List available tests.
+
+**Usage:**
+
+```bash
+/test list
+```
+
+**Output:**
+
+- List of available test names, or "No tests available." if none are registered
+
+### /test run Command
 
 Run tests interactively through the chat interface.
 
 **Usage:**
 
-- `/test list` - Show available tests
-- `/test run [test_name|*]` - Run specific tests or all tests (default when no argument provided)
+- `/test run` - Run all tests (default)
+- `/test run [test_name]` - Run specific test
+- `/test run *` - Run all tests
 
 **Examples:**
 
@@ -244,7 +270,7 @@ Automatically runs tests after chat completion when files have been modified.
 3. Reports pass/fail status for each test
 4. Metrics are logged to agent output
 
-**Example Comment from Code:**
+**Example:**
 
 ```typescript
 async function afterChatCompletion(agent: Agent): Promise<void> {
@@ -274,28 +300,28 @@ The package automatically integrates through the TokenRing plugin system:
 
 ```typescript
 // Plugin configuration schema
-interface TestingServiceConfigSchema {
-  agentDefaults: {
-    maxAutoRepairs: number;
-  };
-  resources?: Record<string, any>;
-}
+const TestingServiceConfigSchema = z.object({
+  agentDefaults: z.object({
+    maxAutoRepairs: z.number().default(5)
+  }).prefault({}),
+  resources: z.record(z.string(), z.any()).optional()
+}).strict().prefault({});
 
 // Shell command resource schema
-interface shellCommandTestingConfigSchema {
-  type: "shell";
-  name: string;
-  description?: string;
-  workingDirectory?: string;
-  command: string;
-  timeoutSeconds?: number;
-  cropOutput?: number;
-}
+const shellCommandTestingConfigSchema = z.object({
+  type: z.literal("shell"),
+  name: z.string(),
+  description: z.string().optional(),
+  workingDirectory: z.string().optional(),
+  command: z.string(),
+  timeoutSeconds: z.number().default(120),
+  cropOutput: z.number().default(10000)
+});
 
 // Agent configuration slice
-interface TestingAgentConfigSchema {
-  maxAutoRepairs?: number;
-}
+const TestingAgentConfigSchema = z.object({
+  maxAutoRepairs: z.number().optional()
+}).default({});
 ```
 
 ## Usage Examples
@@ -441,15 +467,16 @@ testingService.registerResource('custom', customResource);
 
 ```typescript
 class TestingService implements TokenRingService {
-  name: string = "TestingService";
+  readonly name: string = "TestingService";
   description: string = "Provides testing functionality";
 
-  registerResource: (name: string, resource: TestingResource) => void
-  getAvailableResources: () => Iterable<string>
-  runTests: (likeName: string, agent: Agent) => Promise<void>
-  allTestsPassed: (agent: Agent) => boolean
-  attach: (agent: Agent) => void
-  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>)
+  registerResource: (name: string, resource: TestingResource) => void;
+  getAvailableResources: () => Iterable<string>;
+  runTests: (likeName: string, agent: Agent) => Promise<void>;
+  allTestsPassed: (agent: Agent) => boolean;
+  attach: (agent: Agent) => void;
+
+  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>);
 }
 ```
 
@@ -466,33 +493,55 @@ interface TestingResource {
 
 ```typescript
 class ShellCommandTestingResource implements TestingResource {
-  constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>)
+  description: string = "Provides ShellCommandTesting functionality";
+
+  constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>);
 
   // Properties
-  description: string
-  readonly options: z.output<typeof shellCommandTestingConfigSchema>
+  readonly options: z.output<typeof shellCommandTestingConfigSchema>;
+
+  // Methods
+  runTest: (agent: Agent) => Promise<TestResult>;
 }
 ```
 
 ### TestResult (Interface)
 
 ```typescript
-interface TestResult {
-  status: "passed" | "failed" | "timeout" | "error"
-  startedAt: number
-  finishedAt: number
-  output?: string
-  error?: string
-}
+type TestResult =
+  | {
+      status: "passed";
+      startedAt: number;
+      finishedAt: number;
+      output?: string;
+    }
+  | {
+      status: "failed";
+      startedAt: number;
+      finishedAt: number;
+      output: string;
+    }
+  | {
+      status: "timeout";
+      startedAt: number;
+      finishedAt: number;
+    }
+  | {
+      status: "error";
+      startedAt: number;
+      finishedAt: number;
+      error: string;
+    };
 ```
 
 ### Chat Commands
 
 ```typescript
 interface TokenRingAgentCommand {
-  description: string
-  execute: (remainder: string | undefined, agent: Agent) => Promise<void>
-  help: string
+  name: string;
+  description: string;
+  help: string;
+  execute: (remainder: string | undefined, agent: Agent) => Promise<string>;
 }
 ```
 
@@ -568,18 +617,20 @@ The TestingService manages state through the `TestingState` class:
 
 ```typescript
 class TestingState implements AgentStateSlice<typeof serializationSchema> {
-  name: string = "TestingState";
-  serializationSchema: z.output<typeof serializationSchema>;
+  readonly name: string = "TestingState";
+  readonly serializationSchema: z.output<typeof serializationSchema>;
+
   testResults: Record<string, TestResult> = {};
   repairCount: number = 0;
   maxAutoRepairs: number;
 
-  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"])
+  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]);
 
-  reset(what: ResetWhat[]): void
-  serialize(): z.output<typeof serializationSchema>
-  deserialize(data: z.output<typeof serializationSchema>): void
-  show(): string[]
+  // Methods
+  reset(what: ResetWhat[]): void;
+  serialize(): z.output<typeof serializationSchema>;
+  deserialize(data: z.output<typeof serializationSchema>): void;
+  show(): string[];
 }
 ```
 
@@ -614,7 +665,16 @@ The `show()` method returns a formatted string array showing:
 - Test results with PASS/FAIL status
 - Error information if a test failed
 - Total repair count
-- Structure: `["Test Results:", "[Test: name]: PASSED/FAILED/TIMEOUT/ERROR\nerror", "", "Total Repairs: N"]`
+
+Structure:
+```
+[
+  "Test Results:",
+  "[Test: name]: PASSED/FAILED/TIMEOUT/ERROR\nerror",
+  "",
+  "Total Repairs: N"
+]
+```
 
 **State Preservation:**
 
@@ -657,7 +717,7 @@ bun run test:coverage     # Run tests with coverage
 
 ```
 pkg/testing/
-├── chatCommands.ts          # Chat command exports
+├── commands.ts              # Chat command exports
 ├── commands/
 │   └── test/
 │       ├── list.ts          # /test list subcommand
