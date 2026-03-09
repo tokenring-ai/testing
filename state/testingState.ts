@@ -8,15 +8,14 @@ const serializationSchema = z.object({
   maxAutoRepairs: z.number()
 });
 
-export class TestingState implements AgentStateSlice<typeof serializationSchema> {
-  readonly name = "TestingState";
-  serializationSchema = serializationSchema;
+export class TestingState extends AgentStateSlice<typeof serializationSchema> {
   testResults: Record<string, TestResult> = {};
   repairCount = 0;
   maxAutoRepairs: number;
 
 
   constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
+    super("TestingState",serializationSchema);
     this.maxAutoRepairs = initialConfig.maxAutoRepairs;
   }
 

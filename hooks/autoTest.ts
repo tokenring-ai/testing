@@ -1,5 +1,5 @@
-import {Agent} from "@tokenring-ai/agent";
-import {HookConfig} from "@tokenring-ai/agent/types";
+import {HookSubscription} from "@tokenring-ai/agent/types";
+import {AfterAgentInputSuccess, HookCallback} from "@tokenring-ai/agent/util/hooks";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import TestingService from "../TestingService.js";
 
@@ -7,15 +7,22 @@ const name = "autoTest";
 const displayName = "Testing/Auto Test";
 const description = "Runs tests automatically after chat is complete";
 
-async function afterChatCompletion(agent: Agent): Promise<void> {
-  const filesystem = agent.requireServiceByType(FileSystemService);
-  const testingService = agent.requireServiceByType(TestingService);
+const callbacks = [
+  new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
+    const filesystem = agent.requireServiceByType(FileSystemService);
+    const testingService = agent.requireServiceByType(TestingService);
 
-  if (filesystem.isDirty(agent)) {
-    agent.infoMessage("Working Directory was updated, running test suite...");
+    if (filesystem.isDirty(agent)) {
+      agent.infoMessage("Working Directory was updated, running test suite...");
 
-    await testingService.runTests("*",agent);
-  }
-}
+      await testingService.runTests("*",agent);
+    }
+  })
+];
 
-export default {name, displayName, description, afterChatCompletion} satisfies HookConfig
+export default {
+  name,
+  displayName,
+  description,
+  callbacks
+} satisfies HookSubscription

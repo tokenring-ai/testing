@@ -14,6 +14,7 @@ The `@tokenring-ai/testing` package enables automated and manual testing of code
 - **Automation Hooks**: Automatic test execution after file modifications
 - **Configuration-Based Setup**: Declarative resource configuration through plugin system
 - **State Management**: Checkpoint-based state preservation during repair workflows
+- **Auto-Repair**: Automatic error detection and repair suggestions when tests fail
 
 ## Installation
 
@@ -147,16 +148,33 @@ interface TestingResource {
 
 - `runTest(agent: Agent): Promise<TestResult>` - Execute the test
 
-**TestResult Interface:**
+**TestResult Type:**
 
 ```typescript
-interface TestResult {
-  status: "passed" | "failed" | "timeout" | "error";
-  startedAt: number;
-  finishedAt: number;
-  output?: string;
-  error?: string;
-}
+type TestResult =
+  | {
+      status: "passed";
+      startedAt: number;
+      finishedAt: number;
+      output?: string;
+    }
+  | {
+      status: "failed";
+      startedAt: number;
+      finishedAt: number;
+      output: string;
+    }
+  | {
+      status: "timeout";
+      startedAt: number;
+      finishedAt: number;
+    }
+  | {
+      status: "error";
+      startedAt: number;
+      finishedAt: number;
+      error: string;
+    };
 ```
 
 ### ShellCommandTestingResource
@@ -251,7 +269,7 @@ Run tests interactively through the chat interface.
 
 ### autoTest Hook
 
-Automatically runs tests after chat completion when files have been modified.
+Automatically runs tests after agent input success when files have been modified.
 
 **Configuration:**
 
@@ -259,7 +277,7 @@ Automatically runs tests after chat completion when files have been modified.
 - **Display Name**: `Testing/Auto Test`
 - **Description**: "Runs tests automatically after chat is complete"
 
-**Trigger:** `afterChatCompletion` hook event
+**Trigger:** `AfterAgentInputSuccess` hook event
 
 **Condition:** Filesystem is dirty (file modifications detected via `filesystem.isDirty(agent)`)
 
@@ -273,7 +291,9 @@ Automatically runs tests after chat completion when files have been modified.
 **Example:**
 
 ```typescript
-async function afterChatCompletion(agent: Agent): Promise<void> {
+import { HookCallback, AfterAgentInputSuccess } from '@tokenring-ai/agent/util/hooks';
+
+const autoTestHook = new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
   const filesystem = agent.requireServiceByType(FileSystemService);
   const testingService = agent.requireServiceByType(TestingService);
 
@@ -281,7 +301,7 @@ async function afterChatCompletion(agent: Agent): Promise<void> {
     agent.infoMessage("Working Directory was updated, running test suite...");
     await testingService.runTests("*", agent);
   }
-}
+});
 ```
 
 ## Plugin Integration
@@ -290,7 +310,7 @@ The package automatically integrates through the TokenRing plugin system:
 
 **Registration Flow:**
 
-1. Registers chat commands with `AgentCommandService` via `agentCommandService.addAgentCommands(chatCommands)`
+1. Registers chat commands with `AgentCommandService` via `agentCommandService.addAgentCommands(agentCommands)`
 2. Registers hooks with `AgentLifecycleService` via `lifecycleService.addHooks(packageJSON.name, hooks)`
 3. Auto-registers `TestingService` with application via `app.addServices(testingService)`
 4. Creates `ShellCommandTestingResource` instances from configuration via `testingConfig.type === "shell"`
@@ -359,7 +379,7 @@ console.log(allPassed ? 'All tests passed!' : 'Some tests failed');
 ### Resource Registration from Config
 
 ```typescript
-import {TestingServiceConfigSchema, shellCommandTestingConfigSchema} from '@tokenring-ai/testing';
+import { TestingServiceConfigSchema, shellCommandTestingConfigSchema } from '@tokenring-ai/testing';
 
 const appConfig = {
   testing: {
@@ -407,7 +427,7 @@ for (const name in parsedConfig.resources) {
 ```typescript
 // Hook integration - automatically triggers when:
 // 1. File modifications detected (filesystem.isDirty(agent) = true)
-// 2. autoTest hook executes after chat completion
+// 2. AfterAgentInputSuccess hook executes
 // 3. Tests run via testingService.runTests("*", agent)
 // 4. Failures detected and repairCount < maxAutoRepairs
 // 5. User confirms repair through agent.askForApproval()
@@ -422,8 +442,8 @@ for (const name in parsedConfig.resources) {
 ### Custom Test Resource Implementation
 
 ```typescript
-import type {TestingResource} from '@tokenring-ai/testing/TestingResource';
-import type {TestResult} from '@tokenring-ai/testing/schema';
+import type { TestingResource } from '@tokenring-ai/testing/TestingResource';
+import type { TestResult } from '@tokenring-ai/testing/schema';
 
 class CustomTestingResource implements TestingResource {
   description = 'Custom test resource';
@@ -505,7 +525,7 @@ class ShellCommandTestingResource implements TestingResource {
 }
 ```
 
-### TestResult (Interface)
+### TestResult (Type)
 
 ```typescript
 type TestResult =
@@ -548,11 +568,11 @@ interface TokenRingAgentCommand {
 ### Hooks
 
 ```typescript
-interface HookConfig {
+interface HookSubscription {
   name: string;
   displayName: string;
   description: string;
-  afterChatCompletion: (agent: Agent) => Promise<void>;
+  callbacks: HookCallback[];
 }
 ```
 
@@ -721,8 +741,7 @@ pkg/testing/
 ├── commands/
 │   └── test/
 │       ├── list.ts          # /test list subcommand
-│       ├── run.ts           # /test run subcommand
-│       └── test.ts          # /test command definition
+│       └── run.ts           # /test run subcommand
 ├── hooks.ts                 # Hook exports
 ├── hooks/
 │   └── autoTest.ts          # autoTest hook implementation
