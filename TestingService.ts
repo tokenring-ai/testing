@@ -41,7 +41,7 @@ export default class TestingService implements TokenRingService {
 
     let failureReport = "";
     for (const [name, testingResource] of selectedTests) {
-      await agent.busyWhile(`Running test ${name}`, async () => {
+      await agent.busyWithActivity(`Running test ${name}`, async () => {
         const result = results[name] = await testingResource.runTest(agent);
 
         if (result.status === "passed") {
@@ -79,6 +79,7 @@ export default class TestingService implements TokenRingService {
     if (confirm) {
       agent.infoMessage(`Attempting to repair errors...`);
       agent.handleInput({
+        from: "Automatic repair after test suite failure",
         message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`
       });
     }

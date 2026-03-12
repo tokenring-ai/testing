@@ -1,6 +1,6 @@
-import {HookSubscription} from "@tokenring-ai/agent/types";
-import {AfterAgentInputSuccess, HookCallback} from "@tokenring-ai/agent/util/hooks";
 import {FileSystemService} from "@tokenring-ai/filesystem";
+import type {HookSubscription} from "@tokenring-ai/lifecycle/types";
+import {AfterAgentInputSuccess, HookCallback} from "@tokenring-ai/lifecycle/util/hooks";
 import TestingService from "../TestingService.js";
 
 const name = "autoTest";

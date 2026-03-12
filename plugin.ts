@@ -1,5 +1,6 @@
-import {AgentCommandService, AgentLifecycleService} from "@tokenring-ai/agent";
+import {AgentCommandService} from "@tokenring-ai/agent";
 import {TokenRingPlugin} from "@tokenring-ai/app";
+import {AgentLifecycleService} from "@tokenring-ai/lifecycle";
 import {z} from "zod";
 import agentCommands from "./commands.ts";
 import hooks from "./hooks.ts";
