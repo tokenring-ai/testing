@@ -23,7 +23,7 @@ export default {
         agentCommandService.addAgentCommands(agentCommands)
       );
       app.waitForService(AgentLifecycleService, lifecycleService =>
-        lifecycleService.addHooks(packageJSON.name, hooks)
+        lifecycleService.addHooks(hooks)
       );
       const testingService = new TestingService(config.testing);
       app.addServices(testingService);
