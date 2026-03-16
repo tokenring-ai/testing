@@ -4,7 +4,7 @@ import TestingService from "../../TestingService.js";
 
 export default {
   name: "test run",
-  description: "/test run - Run tests",
+  description: "Run tests",
   help: `# /test run [test_name]
 
 Run a specific test or all tests. If tests fail, the agent may offer to automatically repair the issues.

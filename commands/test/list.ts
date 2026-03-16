@@ -4,7 +4,7 @@ import TestingService from "../../TestingService.js";
 
 export default {
   name: "test list",
-  description: "/test list - List available tests",
+  description: "List available tests",
   help: `# /test list
 
 Show all available tests.
