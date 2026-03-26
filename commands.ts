@@ -1,4 +1,4 @@
-import list from './commands/test/list.js';
-import run from './commands/test/run.js';
+import list from './commands/test/list.ts';
+import run from './commands/test/run.ts';
 
 export default [list, run];

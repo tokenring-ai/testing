@@ -1,5 +1,5 @@
 import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import TestingService from "../../TestingService.js";
+import TestingService from "../../TestingService.ts";
 
 const inputSchema = {
   args: {},

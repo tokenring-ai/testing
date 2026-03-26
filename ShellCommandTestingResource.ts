@@ -23,12 +23,14 @@ export default class ShellCommandTestingResource implements TestingResource {
 
     const finishedAt = Date.now();
 
+    const cropLimit = this.options.cropOutput;
+
     if (bashResult.status === "success") {
       return {
         status: "passed" as const,
         startedAt,
         finishedAt,
-        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, this.options.cropOutput)}`,
+        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
       };
     }
 
@@ -37,7 +39,7 @@ export default class ShellCommandTestingResource implements TestingResource {
         status: "failed" as const,
         startedAt,
         finishedAt,
-        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, this.options.cropOutput)}`,
+        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
       };
     }
 

@@ -48,4 +48,4 @@ export const shellCommandTestingConfigSchema = z.object({
   command: z.string(),
   timeoutSeconds: z.number().default(120),
   cropOutput: z.number().default(10000)
-})
+});

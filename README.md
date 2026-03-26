@@ -4,24 +4,31 @@ A testing framework for AI agents within the TokenRing AI ecosystem that provide
 
 ## Overview
 
-The `@tokenring-ai/testing` package enables automated and manual testing of codebases. It integrates shell command execution for tests and includes automation hooks for seamless workflow integration.
+The `@tokenring-ai/testing` package provides a comprehensive testing framework for AI agents within the TokenRing ecosystem. It enables automated and manual testing of codebases through pluggable testing resources, with seamless integration into agent workflows.
+
+The package integrates shell command execution for running tests and includes automation hooks for triggering tests after file modifications. When tests fail, the system can offer automatic repair suggestions based on the error output.
 
 ### Key Features
 
 - **Testing Resources**: Pluggable components for defining and running tests (shell commands, custom resources)
-- **Service Layer**: Central `TestingService` for managing and executing tests across resources
-- **Chat Commands**: Interactive `/test` command for manual control
-- **Automation Hooks**: Automatic test execution after file modifications
-- **Configuration-Based Setup**: Declarative resource configuration through plugin system
-- **State Management**: Checkpoint-based state preservation during repair workflows
-- **Auto-Repair**: Automatic error detection and repair suggestions when tests fail
+- **TestingService**: Central service for managing and executing tests across all registered resources
+- **Chat Commands**: Interactive `/test list` and `/test run` commands for manual control
+- **Automation Hooks**: Automatic test execution after agent input when files are modified
+- **Configuration-Based Setup**: Declarative resource configuration through the plugin system using Zod schemas
+- **State Management**: Persistent state for test results and repair counts with checkpoint support
+- **Auto-Repair Workflow**: Automatic error detection with user-confirmable repair suggestions when tests fail
+- **Pattern-Based Test Selection**: Run specific tests or patterns (e.g., `/test run build*`)
+- **Output Cropping**: Configurable output limits to prevent excessive console output
+- **Timeout Handling**: Configurable timeouts for test execution
 
 ## Installation
 
 This package is part of the TokenRing AI monorepo. To use it:
 
+### As a Monorepo Package
+
 1. Ensure you have Bun installed
-2. Install dependencies:
+2. From the monorepo root, install dependencies:
    ```bash
    bun install
    ```
@@ -36,10 +43,32 @@ To integrate the testing package into your application, import the plugin and ad
 
 ```typescript
 import testingPlugin from '@tokenring-ai/testing/plugin';
+
 app.addPlugin(testingPlugin);
 ```
 
-This registers all required services, commands, and hooks automatically.
+This automatically registers:
+
+- `TestingService` with the application
+- Chat commands (`/test list`, `/test run`) with `AgentCommandService`
+- Hooks (`autoTest`) with `AgentLifecycleService`
+
+### Manual Service Registration
+
+If you prefer manual registration:
+
+```typescript
+import TestingService from '@tokenring-ai/testing/TestingService';
+import { TestingServiceConfigSchema } from '@tokenring-ai/testing/schema';
+
+const config = TestingServiceConfigSchema.parse({
+  agentDefaults: { maxAutoRepairs: 5 },
+  resources: { /* your resources */ }
+});
+
+const testingService = new TestingService(config);
+app.addServices(testingService);
+```
 
 ## Configuration
 
@@ -258,41 +287,54 @@ testingService.registerResource('build-test', resource);
 
 List available tests.
 
+**Command Name**: `test list`
+
 **Usage:**
 
 ```bash
 /test list
 ```
 
+**Input Schema**: No arguments required
+
 **Output:**
 
-- List of available test names, or "No tests available." if none are registered
+- List of available test names formatted as `- [name]`
+- "No tests available." if no resources are registered
 
 ### /test run Command
 
 Run tests interactively through the chat interface.
 
+**Command Name**: `test run`
+
 **Usage:**
 
-- `/test run` - Run all tests (default)
-- `/test run [test_name]` - Run specific test
-- `/test run *` - Run all tests
+```bash
+/test run [pattern]
+```
+
+**Arguments:**
+
+- `pattern` (optional): Test name or pattern to match (default: `*` for all tests)
 
 **Examples:**
 
 ```bash
 /test list              # Lists all available tests
+/test run               # Run all tests (pattern defaults to '*')
 /test run build-test    # Run the 'build-test' resource
-/test run               # Execute every available test (default)
-/test run userAuth      # Run the 'userAuth' test
+/test run unit*         # Run all tests matching 'unit*' pattern
 ```
 
 **Output:**
 
 - `✅ PASSED`: Test completed successfully
-- `❌ FAILED`: Test failed; error details and repair options may be provided
-- `⏳ TIMEOUT`: Test timed out
-- `⚠️ ERROR`: Test encountered an error
+- `❌ FAILED`: Test failed with error details and repair options may be provided
+- `⏳ TIMEOUT`: Test exceeded timeout limit
+- `⚠️ ERROR`: Test encountered an unexpected error
+
+If tests fail, the agent may offer automatic repair options based on `maxAutoRepairs` configuration.
 
 ## Automation Hooks
 
@@ -300,39 +342,61 @@ Run tests interactively through the chat interface.
 
 Automatically runs tests after agent input success when files have been modified.
 
-**Configuration:**
+**Hook Definition:**
 
 - **Name**: `autoTest`
 - **Display Name**: `Testing/Auto Test`
 - **Description**: "Runs tests automatically after chat is complete"
 
-**Trigger:** `AfterAgentInputSuccess` hook event
+**Trigger Event**: `AfterAgentInputSuccess`
 
-**Condition:** Filesystem is dirty (file modifications detected via `filesystem.isDirty(agent)`)
+**Condition**: Filesystem is dirty (file modifications detected via `filesystem.isDirty(agent)`)
 
 **Behavior:**
 
-1. Detects file modifications via `filesystem.isDirty(agent)`
-2. If dirty, runs all available tests via `testingService.runTests("*", agent)`
-3. Reports pass/fail status for each test
-4. Metrics are logged to agent output
+1. Triggered after successful agent input handling
+2. Checks if filesystem has been modified via `filesystem.isDirty(agent)`
+3. If modified, runs all available tests via `testingService.runTests("*", agent)`
+4. Displays "Working Directory was updated, running test suite..." message
+5. Reports pass/fail status for each test via `TestingService`
+
+**Hook Subscription Object:**
+
+```typescript
+import { HookSubscription } from '@tokenring-ai/lifecycle/types';
+
+const autoTest = {
+  name: "autoTest",
+  displayName: "Testing/Auto Test",
+  description: "Runs tests automatically after chat is complete",
+  callbacks: [
+    new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
+      const filesystem = agent.requireServiceByType(FileSystemService);
+      const testingService = agent.requireServiceByType(TestingService);
+
+      if (filesystem.isDirty(agent)) {
+        agent.infoMessage("Working Directory was updated, running test suite...");
+        await testingService.runTests("*", agent);
+      }
+    })
+  ]
+} satisfies HookSubscription;
+```
 
 **Example:**
 
+See the hook definition above for the complete implementation.
+
+The hook is registered through the plugin system:
+
 ```typescript
-import { HookCallback, AfterAgentInputSuccess } from '@tokenring-ai/lifecycle/util/hooks';
-import { FileSystemService } from '@tokenring-ai/filesystem';
-import TestingService from '@tokenring-ai/testing/TestingService';
+import hooks from '@tokenring-ai/testing/hooks';
+import { AgentLifecycleService } from '@tokenring-ai/lifecycle';
 
-const autoTestHook = new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
-  const filesystem = agent.requireServiceByType(FileSystemService);
-  const testingService = agent.requireServiceByType(TestingService);
-
-  if (filesystem.isDirty(agent)) {
-    agent.infoMessage("Working Directory was updated, running test suite...");
-    await testingService.runTests("*", agent);
-  }
-});
+// In plugin install function
+app.waitForService(AgentLifecycleService, lifecycleService =>
+  lifecycleService.addHooks(hooks)
+);
 ```
 
 ## Plugin Integration
@@ -342,10 +406,22 @@ The package automatically integrates through the TokenRing plugin system.
 **Registration Flow:**
 
 1. Registers chat commands with `AgentCommandService` via `agentCommandService.addAgentCommands(agentCommands)`
-2. Registers hooks with `AgentLifecycleService` via `lifecycleService.addHooks(packageJSON.name, hooks)`
+2. Registers hooks with `AgentLifecycleService` via `lifecycleService.addHooks(hooks)`
 3. Auto-registers `TestingService` with application via `app.addServices(testingService)`
 4. Creates `ShellCommandTestingResource` instances from configuration via `testingConfig.type === "shell"`
 5. Uses `TestingServiceConfigSchema` and `shellCommandTestingConfigSchema` for validation
+
+**Hooks Registration Pattern:**
+
+The plugin registers hooks as a record object where keys are hook names:
+
+```typescript
+export default {
+  autoTest,  // Hook subscription object
+};
+```
+
+This is passed to `lifecycleService.addHooks(hooks)` which registers each hook by name.
 
 **Key Schema Interfaces:**
 
@@ -590,13 +666,30 @@ type TestResult =
 
 ### Chat Commands
 
+Commands are registered with the `AgentCommandService` and follow the `TokenRingAgentCommand` interface:
+
 ```typescript
-interface TokenRingAgentCommand {
-  name: string;
-  description: string;
-  help: string;
-  execute: (remainder: string | undefined, agent: Agent) => Promise<string>;
-}
+import type { TokenRingAgentCommand, AgentCommandInputSchema } from '@tokenring-ai/agent/types';
+
+const inputSchema = {
+  positionals: [{
+    name: 'pattern',
+    description: 'Test name or pattern',
+    required: false,
+    defaultValue: '*'
+  }]
+} as const satisfies AgentCommandInputSchema;
+
+export default {
+  name: "test run",
+  description: "Run tests",
+  help: `Run a specific test or all tests...`,
+  inputSchema,
+  execute: async ({positionals: {pattern}, agent}) => {
+    await agent.requireServiceByType(TestingService).runTests(pattern, agent);
+    return "Tests executed";
+  },
+} satisfies TokenRingAgentCommand<typeof inputSchema>;
 ```
 
 ### Hooks
@@ -677,18 +770,19 @@ const testResultSchema = z.discriminatedUnion("status", [
 The TestingService manages state through the `TestingState` class.
 
 ```typescript
-class TestingState implements AgentStateSlice<typeof serializationSchema> {
+class TestingState extends AgentStateSlice<typeof serializationSchema> {
   readonly name: string = "TestingState";
-  readonly serializationSchema: z.output<typeof serializationSchema>;
 
   testResults: Record<string, TestResult> = {};
   repairCount: number = 0;
   maxAutoRepairs: number;
 
-  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]);
+  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
+    super("TestingState", serializationSchema);
+    this.maxAutoRepairs = initialConfig.maxAutoRepairs;
+  }
 
   // Methods
-  reset(what: ResetWhat[]): void;
   serialize(): z.output<typeof serializationSchema>;
   deserialize(data: z.output<typeof serializationSchema>): void;
   show(): string[];
@@ -707,7 +801,6 @@ class TestingState implements AgentStateSlice<typeof serializationSchema> {
 2. **Serialization**: State can be serialized using `serialize()` method and checkpointed
 3. **Deserialization**: State can be restored from checkpoint using `deserialize(data)`
 4. **UI Display**: State information shown via `show()` method
-5. **Reset**: `reset(what)` method can clear specific state portions
 
 **Serialization Schema:**
 
@@ -828,14 +921,16 @@ bun run build           # Type check the code
 bun run eslint          # Run ESLint with auto-fix
 ```
 
-### Known Limitations
+## Known Limitations
 
-- Shell tests assume Unix-like environment (Windows may need adjustments)
-- Repair quality depends on agent capabilities
-- Auto-repair prompts user but execution depends on user confirmation
+- Shell tests assume Unix-like environment (Windows may need adjustments for path separators and command syntax)
+- Repair quality depends on agent capabilities and the nature of test failures
+- Auto-repair requires user confirmation via `askForApproval` before execution
 - File system modification detection requires proper integration with FileSystemService
-- Only shell resource type is currently provided; custom resources can be implemented
-- No automatic test discovery; tests must be manually configured
+- Only `shell` resource type is currently provided; custom resource types can be implemented by implementing the `TestingResource` interface
+- No automatic test discovery; tests must be manually configured in the plugin configuration
+- Test output is cropped to `cropOutput` characters (default 10000) to prevent excessive output
+- Timeout handling may vary depending on the terminal service implementation
 
 ## Dependencies
 
@@ -858,8 +953,8 @@ bun run eslint          # Run ESLint with auto-fix
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| typescript | ^5.9.3 | TypeScript compiler |
-| vitest | ^4.1.0 | Testing framework |
+| typescript | ^6.0.2 | TypeScript compiler |
+| vitest | ^4.1.1 | Testing framework |
 
 ## Package Structure
 
