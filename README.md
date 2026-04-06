@@ -162,7 +162,10 @@ The central service for managing and executing tests across all registered resou
 **Key Methods:**
 
 ```typescript
-class TestingService {
+class TestingService implements TokenRingService {
+  readonly name: string = "TestingService";
+  description: string = "Provides testing functionality";
+
   // Register a testing resource
   registerResource: (name: string, resource: TestingResource) => void;
 
@@ -177,6 +180,8 @@ class TestingService {
 
   // Initialize agent state with testing configuration
   attach: (agent: Agent) => void;
+
+  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>);
 }
 ```
 
@@ -671,21 +676,48 @@ Commands are registered with the `AgentCommandService` and follow the `TokenRing
 ```typescript
 import type { TokenRingAgentCommand, AgentCommandInputSchema } from '@tokenring-ai/agent/types';
 
+// test list command
+const inputSchema = {} as const satisfies AgentCommandInputSchema;
+
+export default {
+  name: "test list",
+  description: "List available tests",
+  help: `Show all available tests.
+
+## Example
+
+/test list`,
+  inputSchema,
+  execute: async ({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
+    const available = Array.from(agent.requireServiceByType(TestingService).getAvailableResources());
+    return available.length === 0 ? "No tests available." : "Available tests:\n" + available.map(n => ` - ${n}`).join('\n');
+  },
+} satisfies TokenRingAgentCommand<typeof inputSchema>;
+```
+
+```typescript
+// test run command
 const inputSchema = {
+  args: {},
   positionals: [{
-    name: 'pattern',
-    description: 'Test name or pattern',
+    name: "pattern",
+    description: "Test name or pattern",
     required: false,
     defaultValue: '*'
-  }]
+  }],
 } as const satisfies AgentCommandInputSchema;
 
 export default {
   name: "test run",
   description: "Run tests",
-  help: `Run a specific test or all tests...`,
+  help: `Run a specific test or all tests. If tests fail, the agent may offer to automatically repair the issues.
+
+## Example
+
+/test run
+/test run userAuth`,
   inputSchema,
-  execute: async ({positionals: {pattern}, agent}) => {
+  execute: async ({positionals: {pattern}, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
     await agent.requireServiceByType(TestingService).runTests(pattern, agent);
     return "Tests executed";
   },
@@ -701,6 +733,24 @@ interface HookSubscription {
   description: string;
   callbacks: HookCallback[];
 }
+
+// autoTest hook
+const autoTest = {
+  name: "autoTest",
+  displayName: "Testing/Auto Test",
+  description: "Runs tests automatically after chat is complete",
+  callbacks: [
+    new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
+      const filesystem = agent.requireServiceByType(FileSystemService);
+      const testingService = agent.requireServiceByType(TestingService);
+
+      if (filesystem.isDirty(agent)) {
+        agent.infoMessage("Working Directory was updated, running test suite...");
+        await testingService.runTests("*", agent);
+      }
+    })
+  ]
+} satisfies HookSubscription;
 ```
 
 ### Configuration Schemas
@@ -717,9 +767,9 @@ const packageConfigSchema = z.object({
 const TestingServiceConfigSchema = z.object({
   agentDefaults: z.object({
     maxAutoRepairs: z.number().default(5)
-  }),
+  }).prefault({}),
   resources: z.record(z.string(), z.any()).optional()
-}).strict();
+}).strict().prefault({});
 
 // Resource schema for shell resources
 const shellCommandTestingConfigSchema = z.object({
@@ -824,7 +874,10 @@ Structure:
 ```
 [
   "Test Results:",
-  "[Test: name]: PASSED/FAILED/TIMEOUT/ERROR\nerror",
+  "[Test: name]: PASSED",
+  "[Test: name]: FAILED\nerror_output",
+  "[Test: name]: TIMEOUT",
+  "[Test: name]: ERROR\nerror_message",
   "",
   "Total Repairs: N"
 ]
@@ -939,7 +992,6 @@ bun run eslint          # Run ESLint with auto-fix
 | Package | Version | Purpose |
 |---------|---------|---------|
 | @tokenring-ai/app | 0.2.0 | Application framework and plugin system |
-| @tokenring-ai/chat | 0.2.0 | Chat interface integration |
 | @tokenring-ai/agent | 0.2.0 | Agent framework and command system |
 | @tokenring-ai/filesystem | 0.2.0 | File system service for dirty detection |
 | @tokenring-ai/lifecycle | 0.2.0 | Lifecycle and hook management |

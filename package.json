@@ -1,6 +1,6 @@
 {
   "name": "@tokenring-ai/testing",
-  "description": "Service that adds testing tools to the context",
+  "description": "Automated test execution with AI-powered \"auto-repair\" for fixing broken code.",
   "version": "0.2.0",
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
