@@ -6,5 +6,4 @@ export default {
 
 export class AfterTestsPassed {
   readonly type = "hook";
-  constructor() {}
 }

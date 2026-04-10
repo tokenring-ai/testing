@@ -1,11 +1,12 @@
 import {AgentStateSlice} from "@tokenring-ai/agent/types";
+import markdownList from "@tokenring-ai/utility/string/markdownList";
 import {z} from "zod";
-import {TestingServiceConfigSchema, type TestResult} from "../schema.ts";
+import type {TestingServiceConfigSchema, TestResult} from "../schema.ts";
 
 const serializationSchema = z.object({
   testResults: z.record(z.string(), z.any()),
   repairCount: z.number(),
-  maxAutoRepairs: z.number()
+  maxAutoRepairs: z.number(),
 });
 
 export class TestingState extends AgentStateSlice<typeof serializationSchema> {
@@ -13,9 +14,12 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
   repairCount = 0;
   maxAutoRepairs: number;
 
-
-  constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
-    super("TestingState",serializationSchema);
+  constructor(
+    readonly initialConfig: z.output<
+      typeof TestingServiceConfigSchema
+    >["agentDefaults"],
+  ) {
+    super("TestingState", serializationSchema);
     this.maxAutoRepairs = initialConfig.maxAutoRepairs;
   }
 
@@ -23,7 +27,7 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
     return {
       testResults: this.testResults,
       repairCount: this.repairCount,
-      maxAutoRepairs: this.maxAutoRepairs
+      maxAutoRepairs: this.maxAutoRepairs,
     };
   }
 
@@ -33,10 +37,10 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
     this.maxAutoRepairs = data.maxAutoRepairs;
   }
 
-  show(): string[] {
-    return [
-      "Test Results:",
-      ...Object.entries(this.testResults).map(([name, result]) => {
+  show(): string {
+    return `Test Results:
+${markdownList(
+      Object.entries(this.testResults).map(([name, result]) => {
         if (result.status === "passed") {
           return `[Test: ${name}]: PASSED`;
         } else if (result.status === "failed") {
@@ -46,9 +50,9 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
         } else {
           return `[Test: ${name}]: ERROR\n${result.error}`;
         }
-      }),
-      "",
-      `Total Repairs: ${this.repairCount}`,
-    ]
+      })
+    )}
+
+Total Repairs: ${this.repairCount}`
   }
 }

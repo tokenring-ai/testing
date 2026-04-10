@@ -1,13 +1,17 @@
-import Agent from "@tokenring-ai/agent/Agent";
+import type Agent from "@tokenring-ai/agent/Agent";
 import {TerminalService} from "@tokenring-ai/terminal";
-import {z} from "zod";
-import {shellCommandTestingConfigSchema, TestResult} from "./schema.ts";
-import {TestingResource} from "./TestingResource.ts";
+import type {z} from "zod";
+import type {shellCommandTestingConfigSchema, TestResult} from "./schema.ts";
+import type {TestingResource} from "./TestingResource.ts";
 
 export default class ShellCommandTestingResource implements TestingResource {
   description: string = "Provides ShellCommandTesting functionality";
 
-  constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>) {}
+  constructor(
+    private readonly options: z.output<typeof shellCommandTestingConfigSchema>,
+  ) {
+  }
+
   async runTest(agent: Agent): Promise<TestResult> {
     const terminal = agent.requireServiceByType(TerminalService);
     const startedAt = Date.now();

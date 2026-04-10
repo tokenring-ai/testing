@@ -1,6 +1,6 @@
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import type {HookSubscription} from "@tokenring-ai/lifecycle/types";
-import {AfterAgentInputSuccess, HookCallback} from "@tokenring-ai/lifecycle/util/hooks";
+import {AfterAgentInputSuccess, HookCallback,} from "@tokenring-ai/lifecycle/util/hooks";
 import TestingService from "../TestingService.ts";
 
 const name = "autoTest";
@@ -15,14 +15,14 @@ const callbacks = [
     if (filesystem.isDirty(agent)) {
       agent.infoMessage("Working Directory was updated, running test suite...");
 
-      await testingService.runTests("*",agent);
+      await testingService.runTests("*", agent);
     }
-  })
+  }),
 ];
 
 export default {
   name,
   displayName,
   description,
-  callbacks
-} satisfies HookSubscription
+  callbacks,
+} satisfies HookSubscription;

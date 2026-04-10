@@ -1,10 +1,10 @@
-import {Agent} from "@tokenring-ai/agent";
+import type {Agent} from "@tokenring-ai/agent";
 
-import {TokenRingService} from "@tokenring-ai/app/types";
+import type {TokenRingService} from "@tokenring-ai/app/types";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import {z} from "zod";
-import {TestingAgentConfigSchema, TestingServiceConfigSchema, TestResult} from "./schema.ts";
+import type {z} from "zod";
+import {TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult,} from "./schema.ts";
 import {TestingState} from "./state/testingState.ts";
 import type {TestingResource} from "./TestingResource.ts";
 
@@ -17,17 +17,18 @@ export default class TestingService implements TokenRingService {
   registerResource = this.testRegistry.register;
   getAvailableResources = this.testRegistry.getAllItemNames;
 
-  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {}
+  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {
+  }
+
   attach(agent: Agent): void {
-    const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice('testing', TestingAgentConfigSchema));
+    const config = deepMerge(
+      this.options.agentDefaults,
+      agent.getAgentConfigSlice("testing", TestingAgentConfigSchema),
+    );
     agent.initializeState(TestingState, config);
   }
 
-  async runTests(
-    likeName: string,
-    agent: Agent,
-  ): Promise<void> {
-
+  async runTests(likeName: string, agent: Agent): Promise<void> {
     const selectedTests = this.testRegistry.getItemEntriesLike(likeName);
 
     if (selectedTests.length === 0) {
@@ -42,7 +43,7 @@ export default class TestingService implements TokenRingService {
     let failureReport = "";
     for (const [name, testingResource] of selectedTests) {
       await agent.busyWithActivity(`Running test ${name}`, async () => {
-        const result = results[name] = await testingResource.runTest(agent);
+        const result = (results[name] = await testingResource.runTest(agent));
 
         if (result.status === "passed") {
           agent.chatOutput(`- **[Test: ${name}]** : ✅ PASSED`);
@@ -57,7 +58,7 @@ export default class TestingService implements TokenRingService {
       });
     }
 
-    if (failureReport === '') {
+    if (failureReport === "") {
       agent.chatOutput(`\n**All tests passed!** ✨`);
       return;
     }
@@ -68,7 +69,7 @@ export default class TestingService implements TokenRingService {
       Object.assign(state.testResults, results);
       repairCount = ++state.repairCount;
       maxAutoRepairs = state.maxAutoRepairs;
-    })
+    });
 
     const confirm = await agent.askForApproval({
       message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
@@ -80,7 +81,7 @@ export default class TestingService implements TokenRingService {
       agent.infoMessage(`Attempting to repair errors...`);
       agent.handleInput({
         from: "Automatic repair after test suite failure",
-        message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`
+        message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`,
       });
     }
   }
@@ -92,11 +93,13 @@ export default class TestingService implements TokenRingService {
    */
   allTestsPassed(agent: Agent): boolean {
     let testResults: Record<string, TestResult> = {};
-    
+
     agent.mutateState(TestingState, (state) => {
-      testResults = { ...state.testResults };
+      testResults = {...state.testResults};
     });
 
-    return Object.values(testResults).every(result => result.status === "passed");
+    return Object.values(testResults).every(
+      (result) => result.status === "passed",
+    );
   }
 }

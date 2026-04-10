@@ -28,17 +28,23 @@ export const testResultSchema = z.discriminatedUnion("status", [
 
 export type TestResult = z.infer<typeof testResultSchema>;
 
-export const TestingAgentConfigSchema = z.object({
-  maxAutoRepairs: z.number().optional(),
-}).default({});
+export const TestingAgentConfigSchema = z
+  .object({
+    maxAutoRepairs: z.number().optional(),
+  })
+  .default({});
 
 export const TestingServiceConfigSchema = z
   .object({
-    agentDefaults: z.object({
-      maxAutoRepairs: z.number().default(5),
-    }).prefault({}),
+    agentDefaults: z
+      .object({
+        maxAutoRepairs: z.number().default(5),
+      })
+      .prefault({}),
     resources: z.record(z.string(), z.any()).optional(),
-  }).strict().prefault({});
+  })
+  .strict()
+  .prefault({});
 
 export const shellCommandTestingConfigSchema = z.object({
   type: z.literal("shell"),
@@ -47,5 +53,5 @@ export const shellCommandTestingConfigSchema = z.object({
   workingDirectory: z.string().optional(),
   command: z.string(),
   timeoutSeconds: z.number().default(120),
-  cropOutput: z.number().default(10000)
+  cropOutput: z.number().default(10000),
 });
