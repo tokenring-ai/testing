@@ -29,10 +29,13 @@ This package is part of the TokenRing AI monorepo. To use it:
 
 1. Ensure you have Bun installed
 2. From the monorepo root, install dependencies:
+
    ```bash
    bun install
    ```
+
 3. Build the TypeScript code:
+
    ```bash
    bun run build
    ```
@@ -871,6 +874,7 @@ The `show()` method returns a formatted string array showing:
 - Total repair count
 
 Structure:
+
 ```
 [
   "Test Results:",

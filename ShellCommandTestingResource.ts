@@ -21,6 +21,7 @@ export default class ShellCommandTestingResource implements TestingResource {
       {
         timeoutSeconds: this.options.timeoutSeconds,
         workingDirectory: this.options.workingDirectory,
+        isolation: this.options.isolation,
       },
       agent,
     );

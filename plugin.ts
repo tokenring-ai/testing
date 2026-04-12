@@ -5,7 +5,7 @@ import {z} from "zod";
 import agentCommands from "./commands.ts";
 import hooks from "./hooks.ts";
 import packageJSON from "./package.json" with {type: "json"};
-import {shellCommandTestingConfigSchema, TestingServiceConfigSchema,} from "./schema.ts";
+import {shellCommandTestingConfigSchema, TestingServiceConfigSchema} from "./schema.ts";
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import TestingService from "./TestingService.ts";
 

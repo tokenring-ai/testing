@@ -3,8 +3,9 @@ import type {Agent} from "@tokenring-ai/agent";
 import type {TokenRingService} from "@tokenring-ai/app/types";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+import codeBlock from "@tokenring-ai/utility/string/codeBlock";
 import type {z} from "zod";
-import {TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult,} from "./schema.ts";
+import {TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult} from "./schema.ts";
 import {TestingState} from "./state/testingState.ts";
 import type {TestingResource} from "./TestingResource.ts";
 
@@ -38,7 +39,7 @@ export default class TestingService implements TokenRingService {
 
     const results: Record<string, TestResult> = {};
 
-    agent.chatOutput(`### Running tests...\n`);
+    agent.chatOutput(`## Running tests...\n`);
 
     let failureReport = "";
     for (const [name, testingResource] of selectedTests) {
@@ -46,14 +47,15 @@ export default class TestingService implements TokenRingService {
         const result = (results[name] = await testingResource.runTest(agent));
 
         if (result.status === "passed") {
-          agent.chatOutput(`- **[Test: ${name}]** : ✅ PASSED`);
+          agent.chatOutput(`### [${name}]\n ✅ PASSED\n`);
         } else if (result.status === "failed") {
-          agent.chatOutput(`- **[Test: ${name}]** : ❌ FAILED`);
-          failureReport += `#### ${name}\n\`\`\`\n${result.output}\n\`\`\`\n\n`;
+          const formattedOutput = codeBlock(result.output);
+          agent.chatOutput(`### [${name}]\n ❌ FAILED\n${formattedOutput}\n`);
+          failureReport += `#### ${name}\n${formattedOutput}\n\n`;
         } else if (result.status === "timeout") {
-          agent.chatOutput(`- **[Test: ${name}]** : ⏳ TIMEOUT`);
+          agent.chatOutput(`### [${name}]\n ⏳ TIMEOUT`);
         } else {
-          agent.chatOutput(`- **[Test: ${name}]** : ⚠️ ERROR`);
+          agent.chatOutput(`### [${name}]\n ⚠️ ERROR`);
         }
       });
     }
@@ -72,7 +74,7 @@ export default class TestingService implements TokenRingService {
     });
 
     const confirm = await agent.askForApproval({
-      message: `The following tests failed. Would you like to ask the agent to automatically repair the errors?\n${failureReport}`,
+      message: `The above tests failed. Would you like to ask the agent to automatically repair the errors?`,
       default: true,
       timeout: repairCount > maxAutoRepairs ? undefined : 30,
     });
@@ -81,7 +83,15 @@ export default class TestingService implements TokenRingService {
       agent.infoMessage(`Attempting to repair errors...`);
       agent.handleInput({
         from: "Automatic repair after test suite failure",
-        message: `After running the test suite, the following problems were encountered, please repair them:\n ${failureReport}`,
+        message: `After running the test suite, the following problems were encountered, please repair them`,
+        attachments: [
+          {
+            name: "Test failure report",
+            encoding: "text",
+            mimeType: "text/markdown",
+            body: failureReport,
+          }
+        ]
       });
     }
   }

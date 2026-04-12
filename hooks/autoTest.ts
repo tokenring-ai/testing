@@ -1,6 +1,6 @@
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import type {HookSubscription} from "@tokenring-ai/lifecycle/types";
-import {AfterAgentInputSuccess, HookCallback,} from "@tokenring-ai/lifecycle/util/hooks";
+import {AfterAgentInputSuccess, HookCallback} from "@tokenring-ai/lifecycle/util/hooks";
 import TestingService from "../TestingService.ts";
 
 const name = "autoTest";
