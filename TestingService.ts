@@ -15,8 +15,8 @@ export default class TestingService implements TokenRingService {
 
   private testRegistry = new KeyedRegistry<TestingResource>();
 
-  registerResource = this.testRegistry.register;
-  getAvailableResources = this.testRegistry.getAllItemNames;
+  registerResource = this.testRegistry.set;
+  getAvailableResources = this.testRegistry.keysArray;
 
   constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {
   }
@@ -30,7 +30,7 @@ export default class TestingService implements TokenRingService {
   }
 
   async runTests(likeName: string, agent: Agent): Promise<void> {
-    const selectedTests = this.testRegistry.getItemEntriesLike(likeName);
+    const selectedTests = this.testRegistry.entriesLike(likeName);
 
     if (selectedTests.length === 0) {
       agent.chatOutput(`No tests found matching \`${likeName}\`.`);
