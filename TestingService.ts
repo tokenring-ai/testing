@@ -1,13 +1,13 @@
-import type {Agent} from "@tokenring-ai/agent";
+import type { Agent } from "@tokenring-ai/agent";
 
-import type {TokenRingService} from "@tokenring-ai/app/types";
+import type { TokenRingService } from "@tokenring-ai/app/types";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import codeBlock from "@tokenring-ai/utility/string/codeBlock";
-import type {z} from "zod";
-import {TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult} from "./schema.ts";
-import {TestingState} from "./state/testingState.ts";
-import type {TestingResource} from "./TestingResource.ts";
+import type { z } from "zod";
+import { TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult } from "./schema.ts";
+import { TestingState } from "./state/testingState.ts";
+import type { TestingResource } from "./TestingResource.ts";
 
 export default class TestingService implements TokenRingService {
   readonly name: string = "TestingService";
@@ -18,14 +18,10 @@ export default class TestingService implements TokenRingService {
   registerResource = this.testRegistry.set;
   getAvailableResources = this.testRegistry.keysArray;
 
-  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {
-  }
+  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {}
 
   attach(agent: Agent): void {
-    const config = deepMerge(
-      this.options.agentDefaults,
-      agent.getAgentConfigSlice("testing", TestingAgentConfigSchema),
-    );
+    const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice("testing", TestingAgentConfigSchema));
     agent.initializeState(TestingState, config);
   }
 
@@ -67,7 +63,7 @@ export default class TestingService implements TokenRingService {
 
     let repairCount!: number;
     let maxAutoRepairs!: number;
-    agent.mutateState(TestingState, (state) => {
+    agent.mutateState(TestingState, state => {
       Object.assign(state.testResults, results);
       repairCount = ++state.repairCount;
       maxAutoRepairs = state.maxAutoRepairs;
@@ -90,8 +86,8 @@ export default class TestingService implements TokenRingService {
             encoding: "text",
             mimeType: "text/markdown",
             body: failureReport,
-          }
-        ]
+          },
+        ],
       });
     }
   }
@@ -104,12 +100,10 @@ export default class TestingService implements TokenRingService {
   allTestsPassed(agent: Agent): boolean {
     let testResults: Record<string, TestResult> = {};
 
-    agent.mutateState(TestingState, (state) => {
-      testResults = {...state.testResults};
+    agent.mutateState(TestingState, state => {
+      testResults = { ...state.testResults };
     });
 
-    return Object.values(testResults).every(
-      (result) => result.status === "passed",
-    );
+    return Object.values(testResults).every(result => result.status === "passed");
   }
 }

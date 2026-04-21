@@ -1,11 +1,11 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export const testResultSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("passed"),
     startedAt: z.number(),
     finishedAt: z.number(),
-    output: z.string().optional(),
+    output: z.string().exactOptional(),
   }),
   z.object({
     status: z.literal("failed"),
@@ -30,7 +30,7 @@ export type TestResult = z.infer<typeof testResultSchema>;
 
 export const TestingAgentConfigSchema = z
   .object({
-    maxAutoRepairs: z.number().optional(),
+    maxAutoRepairs: z.number().exactOptional(),
   })
   .default({});
 
@@ -41,7 +41,7 @@ export const TestingServiceConfigSchema = z
         maxAutoRepairs: z.number().default(5),
       })
       .prefault({}),
-    resources: z.record(z.string(), z.any()).optional(),
+    resources: z.record(z.string(), z.any()).exactOptional(),
   })
   .strict()
   .prefault({});
@@ -49,8 +49,8 @@ export const TestingServiceConfigSchema = z
 export const shellCommandTestingConfigSchema = z.object({
   type: z.literal("shell"),
   name: z.string(),
-  description: z.string().optional(),
-  workingDirectory: z.string().optional(),
+  description: z.string().exactOptional(),
+  workingDirectory: z.string().exactOptional(),
   command: z.string(),
   isolation: z.enum(["sandbox", "none"]).default("sandbox"),
   timeoutSeconds: z.number().default(120),
