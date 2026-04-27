@@ -3,7 +3,7 @@ import type { TokenRingPlugin } from "@tokenring-ai/app";
 import { AgentLifecycleService } from "@tokenring-ai/lifecycle";
 import { z } from "zod";
 import agentCommands from "./commands.ts";
-import hooks from "./hooks.ts";
+import autoTest from "./hooks/autoTest.ts";
 import packageJSON from "./package.json" with { type: "json" };
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import { shellCommandTestingConfigSchema, TestingServiceConfigSchema } from "./schema.ts";
@@ -21,7 +21,7 @@ export default {
   install(app, config) {
     if (config.testing) {
       app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
-      app.waitForService(AgentLifecycleService, lifecycleService => lifecycleService.addHooks(hooks));
+      app.waitForService(AgentLifecycleService, lifecycleService => lifecycleService.addHooks(autoTest));
       const testingService = new TestingService(config.testing);
       app.addServices(testingService);
 

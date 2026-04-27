@@ -1,12 +1,16 @@
 # @tokenring-ai/testing
 
-A testing framework for AI agents within the TokenRing AI ecosystem that provides automated testing capabilities and seamless integration with agent workflows.
+A testing framework for AI agents within the TokenRing AI ecosystem that provides automated testing capabilities and
+seamless integration with agent workflows.
 
 ## Overview
 
-The `@tokenring-ai/testing` package provides a comprehensive testing framework for AI agents within the TokenRing ecosystem. It enables automated and manual testing of codebases through pluggable testing resources, with seamless integration into agent workflows.
+The `@tokenring-ai/testing` package provides a comprehensive testing framework for AI agents within the TokenRing
+ecosystem. It enables automated and manual testing of codebases through pluggable testing resources, with seamless
+integration into agent workflows.
 
-The package integrates shell command execution for running tests and includes automation hooks for triggering tests after file modifications. When tests fail, the system can offer automatic repair suggestions based on the error output.
+The package integrates shell command execution for running tests and includes automation hooks for triggering tests
+after file modifications. When tests fail, the system can offer automatic repair suggestions based on the error output.
 
 ### Key Features
 
@@ -110,23 +114,55 @@ Configure testing resources through your application config:
 
 ```typescript
 {
-  "testing": {
-    "agentDefaults": {
-      "maxAutoRepairs": 5
-    },
-    "resources": {
-      "build-test": {
-        "type": "shell",
-        "name": "build-test",
-        "command": "bun run build",
-        "workingDirectory": "./project",
-        "timeoutSeconds": 120
-      },
-      "unit-tests": {
-        "type": "shell",
-        "name": "unit-tests",
-        "command": "bun test",
-        "workingDirectory": "./project"
+  "testing"
+:
+  {
+    "agentDefaults"
+  :
+    {
+      "maxAutoRepairs"
+    :
+      5
+    }
+  ,
+    "resources"
+  :
+    {
+      "build-test"
+    :
+      {
+        "type"
+      :
+        "shell",
+          "name"
+      :
+        "build-test",
+          "command"
+      :
+        "bun run build",
+          "workingDirectory"
+      :
+        "./project",
+          "timeoutSeconds"
+      :
+        120
+      }
+    ,
+      "unit-tests"
+    :
+      {
+        "type"
+      :
+        "shell",
+          "name"
+      :
+        "unit-tests",
+          "command"
+      :
+        "bun test",
+          "workingDirectory"
+      :
+        "./project"
       }
     }
   }
@@ -691,7 +727,7 @@ export default {
 
 /test list`,
   inputSchema,
-  execute: async ({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
+  execute: async ({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
     const available = Array.from(agent.requireServiceByType(TestingService).getAvailableResources());
     return available.length === 0 ? "No tests available." : "Available tests:\n" + available.map(n => ` - ${n}`).join('\n');
   },
@@ -720,7 +756,7 @@ export default {
 /test run
 /test run userAuth`,
   inputSchema,
-  execute: async ({positionals: {pattern}, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
+  execute: async ({ positionals: { pattern }, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
     await agent.requireServiceByType(TestingService).runTests(pattern, agent);
     return "Tests executed";
   },
@@ -837,7 +873,9 @@ class TestingState extends AgentStateSlice<typeof serializationSchema> {
 
   // Methods
   serialize(): z.output<typeof serializationSchema>;
+
   deserialize(data: z.output<typeof serializationSchema>): void;
+
   show(): string[];
 }
 ```
@@ -902,6 +940,7 @@ The TestingService is automatically registered when the plugin is installed:
 
 ```typescript
 import testingPlugin from '@tokenring-ai/testing/plugin';
+
 app.addPlugin(testingPlugin);
 
 // Service is automatically available
@@ -984,7 +1023,8 @@ bun run eslint          # Run ESLint with auto-fix
 - Repair quality depends on agent capabilities and the nature of test failures
 - Auto-repair requires user confirmation via `askForApproval` before execution
 - File system modification detection requires proper integration with FileSystemService
-- Only `shell` resource type is currently provided; custom resource types can be implemented by implementing the `TestingResource` interface
+- Only `shell` resource type is currently provided; custom resource types can be implemented by implementing the
+  `TestingResource` interface
 - No automatic test discovery; tests must be manually configured in the plugin configuration
 - Test output is cropped to `cropOutput` characters (default 10000) to prevent excessive output
 - Timeout handling may vary depending on the terminal service implementation
@@ -993,24 +1033,24 @@ bun run eslint          # Run ESLint with auto-fix
 
 ### Runtime Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| @tokenring-ai/app | 0.2.0 | Application framework and plugin system |
-| @tokenring-ai/agent | 0.2.0 | Agent framework and command system |
-| @tokenring-ai/filesystem | 0.2.0 | File system service for dirty detection |
-| @tokenring-ai/lifecycle | 0.2.0 | Lifecycle and hook management |
-| @tokenring-ai/terminal | 0.2.0 | Terminal service for shell command execution |
-| @tokenring-ai/queue | 0.2.0 | Queue service for task management |
-| @tokenring-ai/utility | 0.2.0 | Utility classes including KeyedRegistry |
-| glob-gitignore | ^1.0.15 | Gitignore pattern matching |
-| zod | ^4.3.6 | Runtime type validation |
+| Package                  | Version | Purpose                                      |
+|--------------------------|---------|----------------------------------------------|
+| @tokenring-ai/app        | 0.2.0   | Application framework and plugin system      |
+| @tokenring-ai/agent      | 0.2.0   | Agent framework and command system           |
+| @tokenring-ai/filesystem | 0.2.0   | File system service for dirty detection      |
+| @tokenring-ai/lifecycle  | 0.2.0   | Lifecycle and hook management                |
+| @tokenring-ai/terminal   | 0.2.0   | Terminal service for shell command execution |
+| @tokenring-ai/queue      | 0.2.0   | Queue service for task management            |
+| @tokenring-ai/utility    | 0.2.0   | Utility classes including KeyedRegistry      |
+| glob-gitignore           | ^1.0.15 | Gitignore pattern matching                   |
+| zod                      | ^4.3.6  | Runtime type validation                      |
 
 ### Dev Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| typescript | ^6.0.2 | TypeScript compiler |
-| vitest | ^4.1.1 | Testing framework |
+| Package    | Version | Purpose             |
+|------------|---------|---------------------|
+| typescript | ^6.0.2  | TypeScript compiler |
+| vitest     | ^4.1.1  | Testing framework   |
 
 ## Package Structure
 
