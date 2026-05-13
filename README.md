@@ -112,61 +112,22 @@ const config = {
 
 Configure testing resources through your application config:
 
-```typescript
-{
-  "testing"
-:
-  {
-    "agentDefaults"
-  :
-    {
-      "maxAutoRepairs"
-    :
-      5
-    }
-  ,
-    "resources"
-  :
-    {
-      "build-test"
-    :
-      {
-        "type"
-      :
-        "shell",
-          "name"
-      :
-        "build-test",
-          "command"
-      :
-        "bun run build",
-          "workingDirectory"
-      :
-        "./project",
-          "timeoutSeconds"
-      :
-        120
-      }
-    ,
-      "unit-tests"
-    :
-      {
-        "type"
-      :
-        "shell",
-          "name"
-      :
-        "unit-tests",
-          "command"
-      :
-        "bun test",
-          "workingDirectory"
-      :
-        "./project"
-      }
-    }
-  }
-}
+```yaml
+testing:
+  agentDefaults:
+    maxAutoRepairs: 5
+  resources:
+    build-test:
+      type: shell
+      name: build-test
+      command: bun run build
+      workingDirectory: ./project
+      timeoutSeconds: 120
+    unit-tests:
+      type: shell
+      name: unit-tests
+      command: bun test
+      workingDirectory: ./project
 ```
 
 **Note:** The `name` field in resources is required and should match the resource name in the config key.
@@ -237,7 +198,7 @@ if (allPassed) {
 }
 ```
 
-### TestingResource (Interface)
+### TestingResource Interface
 
 Base interface for implementing custom test resources.
 
@@ -279,7 +240,7 @@ type TestResult =
     };
 ```
 
-### ShellCommandTestingResource
+### ShellCommandTestingResource Implementation
 
 Concrete implementation for running shell commands as tests.
 
@@ -294,6 +255,7 @@ interface ShellCommandTestingResourceOptions {
   description?: string;
   workingDirectory?: string;
   command: string;
+  isolation?: "sandbox" | "none";
   timeoutSeconds?: number;
   cropOutput?: number;
 }
@@ -301,6 +263,7 @@ interface ShellCommandTestingResourceOptions {
 
 **Default Values:**
 
+- `isolation`: "sandbox"
 - `timeoutSeconds`: 120 seconds
 - `cropOutput`: 10000 characters
 
@@ -434,12 +397,12 @@ See the hook definition above for the complete implementation.
 The hook is registered through the plugin system:
 
 ```typescript
-import hooks from '@tokenring-ai/testing/hooks';
+import autoTest from '@tokenring-ai/testing/hooks/autoTest';
 import { AgentLifecycleService } from '@tokenring-ai/lifecycle';
 
 // In plugin install function
 app.waitForService(AgentLifecycleService, lifecycleService =>
-  lifecycleService.addHooks(hooks)
+  lifecycleService.addHooks(autoTest)
 );
 ```
 
@@ -450,22 +413,10 @@ The package automatically integrates through the TokenRing plugin system.
 **Registration Flow:**
 
 1. Registers chat commands with `AgentCommandService` via `agentCommandService.addAgentCommands(agentCommands)`
-2. Registers hooks with `AgentLifecycleService` via `lifecycleService.addHooks(hooks)`
+2. Registers hooks with `AgentLifecycleService` via `lifecycleService.addHooks(autoTest)`
 3. Auto-registers `TestingService` with application via `app.addServices(testingService)`
 4. Creates `ShellCommandTestingResource` instances from configuration via `testingConfig.type === "shell"`
 5. Uses `TestingServiceConfigSchema` and `shellCommandTestingConfigSchema` for validation
-
-**Hooks Registration Pattern:**
-
-The plugin registers hooks as a record object where keys are hook names:
-
-```typescript
-export default {
-  autoTest,  // Hook subscription object
-};
-```
-
-This is passed to `lifecycleService.addHooks(hooks)` which registers each hook by name.
 
 **Key Schema Interfaces:**
 
@@ -485,6 +436,7 @@ const shellCommandTestingConfigSchema = z.object({
   description: z.string().optional(),
   workingDirectory: z.string().optional(),
   command: z.string(),
+  isolation: z.enum(["sandbox", "none"]).default("sandbox"),
   timeoutSeconds: z.number().default(120),
   cropOutput: z.number().default(10000)
 });
@@ -530,7 +482,7 @@ console.log(allPassed ? 'All tests passed!' : 'Some tests failed');
 ### Resource Registration from Config
 
 ```typescript
-import { TestingServiceConfigSchema, shellCommandTestingConfigSchema } from '@tokenring-ai/testing/schema';
+import {TestingServiceConfigSchema, shellCommandTestingConfigSchema} from '@tokenring-ai/testing/schema';
 import TestingService from '@tokenring-ai/testing/TestingService';
 import ShellCommandTestingResource from '@tokenring-ai/testing/ShellCommandTestingResource';
 
@@ -637,7 +589,7 @@ testingService.registerResource('custom', customResource);
 
 ## API Reference
 
-### TestingService
+### TestingService API
 
 ```typescript
 class TestingService implements TokenRingService {
@@ -654,7 +606,7 @@ class TestingService implements TokenRingService {
 }
 ```
 
-### TestingResource (Interface)
+### TestingResource Interface Reference
 
 ```typescript
 interface TestingResource {
@@ -663,7 +615,7 @@ interface TestingResource {
 }
 ```
 
-### ShellCommandTestingResource
+### ShellCommandTestingResource API
 
 ```typescript
 class ShellCommandTestingResource implements TestingResource {
@@ -679,7 +631,7 @@ class ShellCommandTestingResource implements TestingResource {
 }
 ```
 
-### TestResult (Type)
+### TestResult Type
 
 ```typescript
 type TestResult =
@@ -708,7 +660,7 @@ type TestResult =
     };
 ```
 
-### Chat Commands
+### Chat Commands API
 
 Commands are registered with the `AgentCommandService` and follow the `TokenRingAgentCommand` interface:
 
@@ -763,7 +715,7 @@ export default {
 } satisfies TokenRingAgentCommand<typeof inputSchema>;
 ```
 
-### Hooks
+### Hooks API
 
 ```typescript
 interface HookSubscription {
@@ -817,6 +769,7 @@ const shellCommandTestingConfigSchema = z.object({
   description: z.string().optional(),
   workingDirectory: z.string().optional(),
   command: z.string(),
+  isolation: z.enum(["sandbox", "none"]).default("sandbox"),
   timeoutSeconds: z.number().default(120),
   cropOutput: z.number().default(10000)
 });
@@ -913,7 +866,7 @@ The `show()` method returns a formatted string array showing:
 
 Structure:
 
-```
+```text
 [
   "Test Results:",
   "[Test: name]: PASSED",
@@ -1040,9 +993,7 @@ bun run eslint          # Run ESLint with auto-fix
 | @tokenring-ai/filesystem | 0.2.0   | File system service for dirty detection      |
 | @tokenring-ai/lifecycle  | 0.2.0   | Lifecycle and hook management                |
 | @tokenring-ai/terminal   | 0.2.0   | Terminal service for shell command execution |
-| @tokenring-ai/queue      | 0.2.0   | Queue service for task management            |
 | @tokenring-ai/utility    | 0.2.0   | Utility classes including KeyedRegistry      |
-| glob-gitignore           | ^1.0.15 | Gitignore pattern matching                   |
 | zod                      | ^4.3.6  | Runtime type validation                      |
 
 ### Dev Dependencies
@@ -1054,14 +1005,14 @@ bun run eslint          # Run ESLint with auto-fix
 
 ## Package Structure
 
-```
+```text
 pkg/testing/
 ├── commands.ts                       # Chat command exports
 ├── commands/
 │   └── test/
 │       ├── list.ts                   # /test list subcommand
 │       └── run.ts                    # /test run subcommand
-├── hooks.ts                          # Hook exports
+├── hooks.ts                          # Hook exports (AfterTestsPassed class)
 ├── hooks/
 │   └── autoTest.ts                   # autoTest hook implementation
 ├── state/
