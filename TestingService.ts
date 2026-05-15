@@ -1,7 +1,7 @@
 import type { Agent } from "@tokenring-ai/agent";
 
 import type { TokenRingService } from "@tokenring-ai/app/types";
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import codeBlock from "@tokenring-ai/utility/string/codeBlock";
 import type { z } from "zod";
@@ -21,7 +21,7 @@ export default class TestingService implements TokenRingService {
   constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {}
 
   attach(agent: Agent): void {
-    const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice("testing", TestingAgentConfigSchema));
+    const config = deepClone(this.options.agentDefaults, agent.getAgentConfigSlice("testing", TestingAgentConfigSchema));
     agent.initializeState(TestingState, config);
   }
 
