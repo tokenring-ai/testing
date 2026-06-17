@@ -5,8 +5,8 @@ import { z } from "zod";
 import agentCommands from "./commands.ts";
 import autoTest from "./hooks/autoTest.ts";
 import packageJSON from "./package.json" with { type: "json" };
-import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import { shellCommandTestingConfigSchema, TestingServiceConfigSchema } from "./schema.ts";
+import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import TestingService from "./TestingService.ts";
 
 const packageConfigSchema = z.object({
