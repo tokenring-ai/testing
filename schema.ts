@@ -41,7 +41,14 @@ export const TestingServiceConfigSchema = z
         maxAutoRepairs: z.number().default(5),
       })
       .prefault({}),
-    resources: z.record(z.string(), z.any()).exactOptional(),
+    resources: z
+      .record(
+        z.string(),
+        z.looseObject({
+          type: z.string(),
+        }),
+      )
+      .exactOptional(),
   })
   .strict()
   .prefault({});

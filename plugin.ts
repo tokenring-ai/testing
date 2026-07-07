@@ -5,8 +5,8 @@ import { z } from "zod";
 import agentCommands from "./commands.ts";
 import autoTest from "./hooks/autoTest.ts";
 import packageJSON from "./package.json" with { type: "json" };
-import { shellCommandTestingConfigSchema, TestingServiceConfigSchema } from "./schema.ts";
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
+import { shellCommandTestingConfigSchema, TestingServiceConfigSchema } from "./schema.ts";
 import TestingService from "./TestingService.ts";
 
 const packageConfigSchema = z.object({
@@ -26,8 +26,7 @@ export default {
       app.addServices(testingService);
 
       if (config.testing.resources) {
-        for (const name in config.testing.resources) {
-          const testingConfig = config.testing.resources[name];
+        for (const [name, testingConfig] of Object.entries(config.testing.resources)) {
           switch (testingConfig.type) {
             case "shell":
               testingService.registerResource(name, new ShellCommandTestingResource(shellCommandTestingConfigSchema.parse(testingConfig)));
