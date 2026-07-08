@@ -51,6 +51,7 @@ export default class ShellCommandTestingResource implements TestingResource {
         status: "timeout" as const,
         startedAt,
         finishedAt,
+        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
       };
     }
 

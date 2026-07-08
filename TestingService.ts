@@ -49,14 +49,18 @@ export default class TestingService implements TokenRingService {
           agent.chatOutput(`### [${name}]\n ❌ FAILED\n${formattedOutput}\n`);
           failureReport += `#### ${name}\n${formattedOutput}\n\n`;
         } else if (result.status === "timeout") {
-          agent.chatOutput(`### [${name}]\n ⏳ TIMEOUT`);
+          const formattedOutput = codeBlock(result.output);
+          agent.chatOutput(`### [${name}]\n ⏳ TIMEOUT\n${formattedOutput}\n`);
+          failureReport += `#### ${name}\nTest timed out\n${formattedOutput}\n\n`;
         } else {
-          agent.chatOutput(`### [${name}]\n ⚠️ ERROR`);
+          agent.chatOutput(`### [${name}]\n ⚠️ ERROR\n`);
+          failureReport += `#### ${name}\n${codeBlock(result.error)}\n\n`;
         }
       });
     }
 
-    if (failureReport === "") {
+    const allPassed = Object.values(results).every(result => result.status === "passed");
+    if (allPassed) {
       agent.chatOutput(`\n**All tests passed!** ✨`);
       return;
     }

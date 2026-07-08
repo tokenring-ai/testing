@@ -42,7 +42,7 @@ ${markdownList(
     } else if (result.status === "failed") {
       return `[Test: ${name}]: FAILED\n${result.output}`;
     } else if (result.status === "timeout") {
-      return `[Test: ${name}]: TIMEOUT`;
+      return `[Test: ${name}]: TIMEOUT\n${result.output}`;
     } else {
       return `[Test: ${name}]: ERROR\n${result.error}`;
     }

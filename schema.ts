@@ -17,6 +17,7 @@ export const testResultSchema = z.discriminatedUnion("status", [
     status: z.literal("timeout"),
     startedAt: z.number(),
     finishedAt: z.number(),
+    output: z.string(),
   }),
   z.object({
     status: z.literal("error"),
