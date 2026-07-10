@@ -3,12 +3,14 @@ import TestingService from "../../TestingService.ts";
 
 const inputSchema = {
   args: {},
-  positionals: [{
-    name: "pattern",
-    description: "Test name or pattern",
-    required: false,
-    defaultValue: "*"
-  }],
+  positionals: [
+    {
+      name: "pattern",
+      description: "Test name or pattern",
+      required: false,
+      defaultValue: "*",
+    },
+  ],
 } as const satisfies AgentCommandInputSchema;
 
 export default {
