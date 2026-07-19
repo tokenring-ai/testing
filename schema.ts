@@ -1,3 +1,4 @@
+import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
 import { z } from "zod";
 
 export const testResultSchema = z.discriminatedUnion("status", [
@@ -39,9 +40,13 @@ export const TestingServiceConfigSchema = z
   .object({
     agentDefaults: z
       .object({
-        maxAutoRepairs: z.number().default(5),
+        maxAutoRepairs: z
+          .number()
+          .default(5)
+          .meta({ description: "Number of times an agent will retry fixing a failing test before giving up" } satisfies ConfigFieldMeta),
       })
-      .prefault({}),
+      .prefault({})
+      .meta({ label: "Agent Defaults" } satisfies ConfigFieldMeta),
     resources: z
       .record(
         z.string(),
@@ -49,18 +54,23 @@ export const TestingServiceConfigSchema = z
           type: z.string(),
         }),
       )
-      .exactOptional(),
+      .exactOptional()
+      .meta({ label: "Resources", description: "Named test resources (e.g. shell commands), keyed by name" } satisfies ConfigFieldMeta),
   })
   .strict()
-  .prefault({});
+  .prefault({})
+  .meta({ label: "Testing", description: "Test execution and auto-repair settings for agents" } satisfies ConfigFieldMeta);
 
 export const shellCommandTestingConfigSchema = z.object({
   type: z.literal("shell"),
-  name: z.string(),
-  description: z.string().exactOptional(),
-  workingDirectory: z.string().exactOptional(),
-  command: z.string(),
-  isolation: z.enum(["sandbox", "none"]).default("sandbox"),
-  timeoutSeconds: z.number().default(120),
-  cropOutput: z.number().default(10000),
+  name: z.string().meta({ description: "Name shown for this test resource" } satisfies ConfigFieldMeta),
+  description: z.string().exactOptional().meta({ description: "What this test checks" } satisfies ConfigFieldMeta),
+  workingDirectory: z.string().exactOptional().meta({ description: "Directory the command runs in" } satisfies ConfigFieldMeta),
+  command: z.string().meta({ description: "Shell command that runs the test" } satisfies ConfigFieldMeta),
+  isolation: z
+    .enum(["sandbox", "none"])
+    .default("sandbox")
+    .meta({ advanced: true, description: "Whether the command runs inside the sandbox" } satisfies ConfigFieldMeta),
+  timeoutSeconds: z.number().default(120).meta({ unit: "s", advanced: true, description: "Kill the command if it runs longer than this" } satisfies ConfigFieldMeta),
+  cropOutput: z.number().default(10000).meta({ unit: "chars", advanced: true, description: "Truncate command output beyond this length" } satisfies ConfigFieldMeta),
 });
