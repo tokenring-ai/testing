@@ -64,13 +64,25 @@ export const TestingServiceConfigSchema = z
 export const shellCommandTestingConfigSchema = z.object({
   type: z.literal("shell"),
   name: z.string().meta({ description: "Name shown for this test resource" } satisfies ConfigFieldMeta),
-  description: z.string().exactOptional().meta({ description: "What this test checks" } satisfies ConfigFieldMeta),
-  workingDirectory: z.string().exactOptional().meta({ description: "Directory the command runs in" } satisfies ConfigFieldMeta),
+  description: z
+    .string()
+    .exactOptional()
+    .meta({ description: "What this test checks" } satisfies ConfigFieldMeta),
+  workingDirectory: z
+    .string()
+    .exactOptional()
+    .meta({ description: "Directory the command runs in" } satisfies ConfigFieldMeta),
   command: z.string().meta({ description: "Shell command that runs the test" } satisfies ConfigFieldMeta),
   isolation: z
     .enum(["sandbox", "none"])
     .default("sandbox")
     .meta({ advanced: true, description: "Whether the command runs inside the sandbox" } satisfies ConfigFieldMeta),
-  timeoutSeconds: z.number().default(120).meta({ unit: "s", advanced: true, description: "Kill the command if it runs longer than this" } satisfies ConfigFieldMeta),
-  cropOutput: z.number().default(10000).meta({ unit: "chars", advanced: true, description: "Truncate command output beyond this length" } satisfies ConfigFieldMeta),
+  timeoutSeconds: z
+    .number()
+    .default(120)
+    .meta({ unit: "s", advanced: true, description: "Kill the command if it runs longer than this" } satisfies ConfigFieldMeta),
+  cropOutput: z
+    .number()
+    .default(10000)
+    .meta({ unit: "chars", advanced: true, description: "Truncate command output beyond this length" } satisfies ConfigFieldMeta),
 });
