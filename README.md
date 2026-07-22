@@ -946,20 +946,17 @@ bun run test:watch        # Run tests in watch mode
 bun run test:coverage     # Run tests with coverage
 ```
 
-### Vitest Configuration
+### Bun Test Configuration
 
-The package uses Vitest for testing with the following configuration:
+The package uses Bun's built-in test runner (`bun test`). Test files follow the `*.test.ts` naming convention and import from `bun:test`:
 
 ```typescript
-import {defineConfig} from 'vitest/config';
+import { describe, expect, it } from "bun:test";
 
-export default defineConfig({
-  test: {
-    include: ['**/*.test.ts'],
-    environment: 'node',
-    globals: true,
-    isolate: true,
-  },
+describe("my test", () => {
+  it("should work", () => {
+    expect(true).toBe(true);
+  });
 });
 ```
 
@@ -1001,7 +998,6 @@ bun run eslint          # Run ESLint with auto-fix
 | Package    | Version | Purpose             |
 |------------|---------|---------------------|
 | typescript | ^6.0.2  | TypeScript compiler |
-| vitest     | ^4.1.1  | Testing framework   |
 
 ## Package Structure
 
@@ -1024,7 +1020,6 @@ pkg/testing/
 ├── plugin.ts                         # Plugin registration
 ├── index.ts                          # Public exports
 ├── package.json                      # Dependencies and scripts
-├── vitest.config.ts                  # Vitest configuration
 ├── LICENSE                           # MIT License
 └── README.md                         # This documentation
 ```
