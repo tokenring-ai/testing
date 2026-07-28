@@ -5,12 +5,11 @@ import { z } from "zod";
 import agentCommands from "./commands.ts";
 import autoTest from "./hooks/autoTest.ts";
 import packageJSON from "./package.json" with { type: "json" };
-import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
-import { shellCommandTestingConfigSchema, TestingServiceConfigSchema } from "./schema.ts";
+import { TestingServiceConfigSchema } from "./schema.ts";
 import TestingService from "./TestingService.ts";
 
 const packageConfigSchema = z.object({
-  testing: TestingServiceConfigSchema.exactOptional(),
+  testing: TestingServiceConfigSchema,
 });
 
 export default {
@@ -18,23 +17,13 @@ export default {
   displayName: "Testing Framework",
   version: packageJSON.version,
   description: packageJSON.description,
-  install(app, config) {
-    if (config.testing) {
-      app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
-      app.waitForService(AgentLifecycleService, lifecycleService => lifecycleService.addHooks(autoTest));
-      const testingService = new TestingService(config.testing);
-      app.addServices(testingService);
-
-      if (config.testing.resources) {
-        for (const [name, testingConfig] of Object.entries(config.testing.resources)) {
-          switch (testingConfig.type) {
-            case "shell":
-              testingService.registerResource(name, new ShellCommandTestingResource(shellCommandTestingConfigSchema.parse(testingConfig)));
-              break;
-          }
-        }
-      }
-    }
+  install(app) {
+    app.addServices(new TestingService());
+    app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
+    app.waitForService(AgentLifecycleService, lifecycleService => lifecycleService.addHooks(autoTest));
+  },
+  reconfigure(app, config) {
+    app.requireService(TestingService).reconfigure(config.testing);
   },
   configSchema: packageConfigSchema,
 } satisfies TokenRingPlugin<typeof packageConfigSchema>;

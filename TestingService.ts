@@ -1,13 +1,17 @@
 import type { Agent } from "@tokenring-ai/agent";
 
 import type { TokenRingService } from "@tokenring-ai/app/types";
+import { deepEqual } from "@tokenring-ai/one-frontend/src/lib/utils";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import codeBlock from "@tokenring-ai/utility/string/codeBlock";
 import type { z } from "zod";
-import { TestingAgentConfigSchema, type TestingServiceConfigSchema, type TestResult } from "./schema.ts";
+import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
+import { shellCommandTestingConfigSchema, TestingAgentConfigSchema, TestingServiceConfigSchema, type TestResult } from "./schema.ts";
 import { TestingState } from "./state/testingState.ts";
 import type { TestingResource } from "./TestingResource.ts";
+
+type TestingServiceConfig = z.output<typeof TestingServiceConfigSchema>;
 
 export default class TestingService implements TokenRingService {
   readonly name: string = "TestingService";
@@ -18,7 +22,32 @@ export default class TestingService implements TokenRingService {
   registerResource = this.testRegistry.set;
   getAvailableResources = this.testRegistry.keysArray;
 
-  constructor(readonly options: z.output<typeof TestingServiceConfigSchema>) {}
+  private options: TestingServiceConfig = TestingServiceConfigSchema.parse({});
+
+  constructor(options?: TestingServiceConfig) {
+    if (options) this.reconfigure(options);
+  }
+
+  reconfigure(newConfig: TestingServiceConfig): void {
+    this.testRegistry.reconcileAgainst(newConfig.resources, {
+      creating: (_name, testingConfig) => this.createResource(testingConfig),
+      deleting: () => {},
+      updating: (name, resource, testingConfig) => {
+        if (deepEqual(this.options.resources[name], testingConfig)) return resource;
+        return this.createResource(testingConfig);
+      },
+    });
+    this.options = newConfig;
+  }
+
+  private createResource(testingConfig: { type: string }): TestingResource {
+    switch (testingConfig.type) {
+      case "shell":
+        return new ShellCommandTestingResource(shellCommandTestingConfigSchema.parse(testingConfig));
+      default:
+        throw new Error(`Unknown testing resource type: ${testingConfig.type}`);
+    }
+  }
 
   attach(agent: Agent): void {
     const config = deepClone(this.options.agentDefaults, agent.getAgentConfigSlice("testing", TestingAgentConfigSchema));

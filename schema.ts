@@ -54,7 +54,7 @@ export const TestingServiceConfigSchema = z
           type: z.string(),
         }),
       )
-      .exactOptional()
+      .prefault({})
       .meta({ label: "Resources", description: "Named test resources (e.g. shell commands), keyed by name" } satisfies ConfigFieldMeta),
   })
   .strict()
