@@ -9,8 +9,8 @@ const description = "Runs tests automatically after chat is complete";
 
 const callbacks = [
   new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
-    const filesystem = agent.requireServiceByType(FileSystemService);
-    const testingService = agent.requireServiceByType(TestingService);
+    const filesystem = agent.requireService(FileSystemService);
+    const testingService = agent.requireService(TestingService);
 
     if (filesystem.isDirty(agent)) {
       agent.infoMessage("Working Directory was updated, running test suite...");

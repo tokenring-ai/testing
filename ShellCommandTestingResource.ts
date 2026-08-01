@@ -11,7 +11,7 @@ export default class ShellCommandTestingResource implements TestingResource {
   constructor(private readonly options: z.output<typeof shellCommandTestingConfigSchema>) {}
 
   async runTest(agent: Agent): Promise<TestResult> {
-    const terminal = agent.requireServiceByType(TerminalService);
+    const terminal = agent.requireService(TerminalService);
     const startedAt = Date.now();
 
     const bashResult = await terminal.runScript(

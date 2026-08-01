@@ -14,7 +14,7 @@ export default {
 /test list`,
   inputSchema,
   execute: async ({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
-    const available = agent.requireServiceByType(TestingService).getAvailableResources();
+    const available = agent.requireService(TestingService).getAvailableResources();
     return available.length === 0 ? "No tests available." : "Available tests:\n" + markdownList(available);
   },
 } satisfies TokenRingAgentCommand<typeof inputSchema>;

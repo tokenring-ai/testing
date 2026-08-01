@@ -1,8 +1,8 @@
 import type { Agent } from "@tokenring-ai/agent";
 
 import type { TokenRingService } from "@tokenring-ai/app/types";
-import { deepEqual } from "@tokenring-ai/one-frontend/src/lib/utils";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
+import deepEqual from "@tokenring-ai/utility/object/deepEqual";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import codeBlock from "@tokenring-ai/utility/string/codeBlock";
 import type { z } from "zod";

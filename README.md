@@ -190,7 +190,7 @@ class TestingService implements TokenRingService {
 ```typescript
 import TestingService from '@tokenring-ai/testing/TestingService';
 
-const testingService = agent.requireServiceByType(TestingService);
+const testingService = agent.requireService(TestingService);
 await testingService.runTests("*", agent);
 const allPassed = testingService.allTestsPassed(agent);
 if (allPassed) {
@@ -378,8 +378,8 @@ const autoTest = {
   description: "Runs tests automatically after chat is complete",
   callbacks: [
     new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
-      const filesystem = agent.requireServiceByType(FileSystemService);
-      const testingService = agent.requireServiceByType(TestingService);
+      const filesystem = agent.requireService(FileSystemService);
+      const testingService = agent.requireService(TestingService);
 
       if (filesystem.isDirty(agent)) {
         agent.infoMessage("Working Directory was updated, running test suite...");
@@ -680,7 +680,7 @@ export default {
 /test list`,
   inputSchema,
   execute: async ({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
-    const available = Array.from(agent.requireServiceByType(TestingService).getAvailableResources());
+    const available = Array.from(agent.requireService(TestingService).getAvailableResources());
     return available.length === 0 ? "No tests available." : "Available tests:\n" + available.map(n => ` - ${n}`).join('\n');
   },
 } satisfies TokenRingAgentCommand<typeof inputSchema>;
@@ -709,7 +709,7 @@ export default {
 /test run userAuth`,
   inputSchema,
   execute: async ({ positionals: { pattern }, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
-    await agent.requireServiceByType(TestingService).runTests(pattern, agent);
+    await agent.requireService(TestingService).runTests(pattern, agent);
     return "Tests executed";
   },
 } satisfies TokenRingAgentCommand<typeof inputSchema>;
@@ -732,8 +732,8 @@ const autoTest = {
   description: "Runs tests automatically after chat is complete",
   callbacks: [
     new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
-      const filesystem = agent.requireServiceByType(FileSystemService);
-      const testingService = agent.requireServiceByType(TestingService);
+      const filesystem = agent.requireService(FileSystemService);
+      const testingService = agent.requireService(TestingService);
 
       if (filesystem.isDirty(agent)) {
         agent.infoMessage("Working Directory was updated, running test suite...");
@@ -897,7 +897,7 @@ import testingPlugin from '@tokenring-ai/testing/plugin';
 app.addPlugin(testingPlugin);
 
 // Service is automatically available
-const testingService = agent.requireServiceByType(TestingService);
+const testingService = agent.requireService(TestingService);
 ```
 
 ### Command Registration

@@ -18,7 +18,7 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   install(app) {
-    app.addServices(new TestingService());
+    app.addService(new TestingService());
     app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
     app.waitForService(AgentLifecycleService, lifecycleService => lifecycleService.addHooks(autoTest));
   },

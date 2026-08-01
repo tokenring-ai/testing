@@ -23,8 +23,8 @@ export default {
 /test run
 /test run userAuth`,
   inputSchema,
-  execute: async ({ positionals: { pattern }, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
-    await agent.requireServiceByType(TestingService).runTests(pattern, agent);
+  execute: async ({ args: { pattern }, agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> => {
+    await agent.requireService(TestingService).runTests(pattern, agent);
     return "Tests executed";
   },
 } satisfies TokenRingAgentCommand<typeof inputSchema>;
