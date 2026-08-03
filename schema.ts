@@ -42,8 +42,8 @@ export const TestingServiceConfigSchema = z
       .object({
         maxAutoRepairs: z
           .number()
-          .default(5)
-          .meta({ description: "Number of times an agent will retry fixing a failing test before giving up" } satisfies ConfigFieldMeta),
+          .default(1)
+          .meta({ description: "Number of times an agent will automatically retry fixing a failing test before giving up" } satisfies ConfigFieldMeta),
       })
       .prefault({})
       .meta({ label: "Agent Defaults" } satisfies ConfigFieldMeta),

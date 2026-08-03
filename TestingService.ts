@@ -89,24 +89,29 @@ export default class TestingService implements TokenRingService {
     }
 
     const allPassed = Object.values(results).every(result => result.status === "passed");
+
+    const shouldAutoRepair = agent.mutateState(TestingState, state => {
+      Object.assign(state.testResults, results);
+      if (allPassed || state.repairCount >= state.maxAutoRepairs) {
+        state.repairCount = 0;
+        return false;
+      }
+
+      state.repairCount++;
+      return true;
+    });
+
     if (allPassed) {
       agent.chatOutput(`\n**All tests passed!** ✨`);
       return;
     }
 
-    let repairCount!: number;
-    let maxAutoRepairs!: number;
-    agent.mutateState(TestingState, state => {
-      Object.assign(state.testResults, results);
-      repairCount = ++state.repairCount;
-      maxAutoRepairs = state.maxAutoRepairs;
-    });
-
-    const confirm = await agent.askForApproval({
-      message: `The above tests failed. Would you like to ask the agent to automatically repair the errors?`,
-      default: true,
-      timeout: repairCount > maxAutoRepairs ? undefined : 30,
-    });
+    const confirm =
+      shouldAutoRepair ||
+      (await agent.askForApproval({
+        message: `The above tests failed. Would you like to ask the agent to automatically repair the errors?`,
+        defaultValue: true,
+      }));
 
     if (confirm) {
       agent.infoMessage(`Attempting to repair errors...`);
@@ -122,6 +127,9 @@ export default class TestingService implements TokenRingService {
           },
         ],
       });
+    } else {
+      agent.chatOutput(`\n**Some tests failed.** ❌\n Not attempting to repair errors due to user request or auto repair limit reached`);
+      agent.mutateState(TestingState, state => (state.repairCount = 0));
     }
   }
 
