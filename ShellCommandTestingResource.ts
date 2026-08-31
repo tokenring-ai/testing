@@ -26,14 +26,25 @@ export default class ShellCommandTestingResource implements TestingResource {
 
     const finishedAt = Date.now();
 
+    if (bashResult.status === "unknownError") {
+      return {
+        status: "error" as const,
+        startedAt,
+        finishedAt,
+        error: bashResult.error,
+      };
+    }
+
     const cropLimit = this.options.cropOutput;
+    const location = this.options.workingDirectory ? ` in ${this.options.workingDirectory}` : "";
+    const output = `Running ${this.options.command}${location}:\n${bashResult.output.trim().substring(0, cropLimit)}`;
 
     if (bashResult.status === "success") {
       return {
         status: "passed" as const,
         startedAt,
         finishedAt,
-        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
+        output,
       };
     }
 
@@ -42,24 +53,15 @@ export default class ShellCommandTestingResource implements TestingResource {
         status: "failed" as const,
         startedAt,
         finishedAt,
-        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
-      };
-    }
-
-    if (bashResult.status === "timeout") {
-      return {
-        status: "timeout" as const,
-        startedAt,
-        finishedAt,
-        output: `Running ${this.options.command} in ${this.options.workingDirectory}:\n${bashResult.output.trim().substring(0, cropLimit)}`,
+        output,
       };
     }
 
     return {
-      status: "error" as const,
+      status: "timeout" as const,
       startedAt,
       finishedAt,
-      error: bashResult.error,
+      output,
     };
   }
 }

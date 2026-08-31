@@ -37,15 +37,12 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
     return `Test Results:
 ${markdownList(
   Object.entries(this.testResults).map(([name, result]) => {
+    const header = `[Test: ${name}]: ${result.status.toUpperCase()}`;
     if (result.status === "passed") {
-      return `[Test: ${name}]: PASSED`;
-    } else if (result.status === "failed") {
-      return `[Test: ${name}]: FAILED\n${result.output}`;
-    } else if (result.status === "timeout") {
-      return `[Test: ${name}]: TIMEOUT\n${result.output}`;
-    } else {
-      return `[Test: ${name}]: ERROR\n${result.error}`;
+      return header;
     }
+    const detail = result.status === "error" ? result.error : result.output;
+    return `${header}\n${detail}`.replaceAll("\n", "\n   ");
   }),
 )}
 
