@@ -13,7 +13,7 @@ const callbacks = [
     const testingService = agent.requireService(TestingService);
 
     if (filesystem.isDirty(agent)) {
-      agent.infoMessage("Working Directory was updated, running test suite...");
+      agent.infoMessage("Filesystem was updated, running test suite...");
 
       await testingService.runTests("*", agent);
     }

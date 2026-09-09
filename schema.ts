@@ -68,10 +68,7 @@ export const shellCommandTestingConfigSchema = z.object({
     .string()
     .exactOptional()
     .meta({ description: "What this test checks" } satisfies ConfigFieldMeta),
-  workingDirectory: z
-    .string()
-    .exactOptional()
-    .meta({ description: "Directory the command runs in" } satisfies ConfigFieldMeta),
+  workingDirectory: z.string().exactOptional().meta({ description: "Absolute directory the command runs in; must be inside an allowed path" } satisfies ConfigFieldMeta),
   command: z.string().meta({ description: "Shell command that runs the test" } satisfies ConfigFieldMeta),
   isolation: z
     .enum(["sandbox", "none"])

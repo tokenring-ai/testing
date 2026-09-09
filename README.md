@@ -113,13 +113,13 @@ testing:
       type: shell
       name: build-test
       command: bun run build
-      workingDirectory: ./project
+      workingDirectory: /absolute/path/to/project
       timeoutSeconds: 120
     unit-tests:
       type: shell
       name: unit-tests
       command: bun test
-      workingDirectory: ./project
+      workingDirectory: /absolute/path/to/project
 ```
 
 ### Service Configuration
@@ -139,7 +139,7 @@ Each entry in `resources` with `type: "shell"` is validated against `shellComman
 | `type` | `"shell"` | yes | --- | Resource type discriminator |
 | `name` | `string` | yes | --- | Name shown for this test resource |
 | `description` | `string` | no | --- | What this test checks |
-| `workingDirectory` | `string` | no | --- | Directory the command runs in |
+| `workingDirectory` | `string` | yes | --- | Absolute directory the command runs in; must be inside an allowed path |
 | `command` | `string` | yes | --- | Shell command that runs the test |
 | `isolation` | `"sandbox" \| "none"` | no | `"sandbox"` | Whether the command runs inside the sandbox |
 | `timeoutSeconds` | `number` | no | `120` | Kill the command if it runs longer than this (seconds) |
@@ -183,7 +183,7 @@ The following `.meta()` annotations are used for config UI integration:
 |-------|----------|
 | `name` | `description: "Name shown for this test resource"` |
 | `description` | `description: "What this test checks"` |
-| `workingDirectory` | `description: "Directory the command runs in"` |
+| `workingDirectory` | `description: "Absolute directory the command runs in; must be inside an allowed path"` |
 | `command` | `description: "Shell command that runs the test"` |
 | `isolation` | `advanced: true`, `description: "Whether the command runs inside the sandbox"` |
 | `timeoutSeconds` | `unit: "s"`, `advanced: true`, `description: "Kill the command if it runs longer than this"` |
