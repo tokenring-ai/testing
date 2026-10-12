@@ -1,6 +1,5 @@
 import type Agent from "@tokenring-ai/agent/Agent";
 import { TerminalService } from "@tokenring-ai/terminal";
-import { stripUndefinedKeys } from "@tokenring-ai/utility/object/stripObject";
 import type { z } from "zod";
 import type { shellCommandTestingConfigSchema, TestResult } from "./schema.ts";
 import type { TestingResource } from "./TestingResource.ts";
