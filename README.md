@@ -224,7 +224,7 @@ The central service for managing and executing tests across all registered resou
 3. For each test, emits a status line: `PASSED`, `FAILED` (with output in a code block), `TIMEOUT`
    (with output in a code block), or `ERROR`.
 4. After all tests, checks whether all passed. If so, resets `repairCount` to 0, outputs a success
-   message, and returns.
+   message, fires the `AfterTestsPassed` hook, and returns.
 5. If not all passed, consults `TestingState`: if `repairCount >= maxAutoRepairs`, resets
    `repairCount` to 0 and sets `shouldAutoRepair` to `false`. Otherwise, increments `repairCount`
    and sets `shouldAutoRepair` to `true`.
@@ -302,7 +302,7 @@ State slice for tracking test results and repair counts per agent.
 | Method | Description |
 |--------|-------------|
 | `constructor(initialConfig)` | Initializes the state slice with `maxAutoRepairs` from the provided config |
-| `serialize(): z.output<typeof serializationSchema>` | Returns `{ testResults, repairCount, maxAutoRepairs }` for checkpointing |
+| `serialize(): z.output<typeof serializationSchema>` | Returns `{ testResults, repairCount, maxAutoRepairs, testedWriteCount }` for checkpointing |
 | `deserialize(data: z.output<typeof serializationSchema>): void` | Restores state from serialized data |
 | `show(): string` | Returns a formatted string listing test results and total repair count |
 
@@ -318,8 +318,9 @@ const serializationSchema = z.object({
 
 ### AfterTestsPassed
 
-A hook event class exported from `hooks.ts` representing a "tests passed" event. Defined but not
-currently used in any hook callback registration within this package.
+A hook event class exported from `hooks.ts` representing a "tests passed" event. `runTests` fires
+it through `AgentLifecycleService` when every test in a run passes; the git plugin's `autoCommit`
+hook listens for it.
 
 ```typescript
 export class AfterTestsPassed {
@@ -383,8 +384,10 @@ import testingPlugin from "@tokenring-ai/testing/plugin";
 
 1. Triggered after successful agent input handling.
 2. Resolves `FileSystemService` and `TestingService` from the agent.
-3. Checks if the filesystem has been modified via `filesystem.isDirty(agent)`.
-4. If modified, emits an info message and runs all tests via `testingService.runTests("*", agent)`.
+3. Compares `filesystem.getWriteCount(agent)` with `TestingState.testedWriteCount`. If no file was
+   written since the suite last ran, it returns.
+4. Otherwise it records the write count in `TestingState`, emits an info message and runs all tests
+   via `testingService.runTests("*", agent)`.
 
 ```typescript
 import { AfterAgentInputSuccess, HookCallback } from "@tokenring-ai/lifecycle/util/hooks";
@@ -393,10 +396,13 @@ new HookCallback(AfterAgentInputSuccess, async (_data, agent) => {
   const filesystem = agent.requireService(FileSystemService);
   const testingService = agent.requireService(TestingService);
 
-  if (filesystem.isDirty(agent)) {
-    agent.infoMessage("Working Directory was updated, running test suite...");
-    await testingService.runTests("*", agent);
-  }
+  const writeCount = filesystem.getWriteCount(agent);
+  if (writeCount === agent.getState(TestingState).testedWriteCount) return;
+  agent.mutateState(TestingState, state => {
+    state.testedWriteCount = writeCount;
+  });
+  agent.infoMessage("Filesystem was updated, running test suite...");
+  await testingService.runTests("*", agent);
 })
 ```
 

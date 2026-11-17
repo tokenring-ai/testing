@@ -1,11 +1,13 @@
 import type { Agent } from "@tokenring-ai/agent";
 
 import type { TokenRingService } from "@tokenring-ai/app/types";
+import AgentLifecycleService from "@tokenring-ai/lifecycle/AgentLifecycleService";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import deepEqual from "@tokenring-ai/utility/object/deepEqual";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import codeBlock from "@tokenring-ai/utility/string/codeBlock";
 import type { z } from "zod";
+import { AfterTestsPassed } from "./hooks.ts";
 import ShellCommandTestingResource from "./ShellCommandTestingResource.ts";
 import { shellCommandTestingConfigSchema, TestingAgentConfigSchema, TestingServiceConfigSchema, type TestResult } from "./schema.ts";
 import { TestingState } from "./state/testingState.ts";
@@ -103,6 +105,8 @@ export default class TestingService implements TokenRingService {
 
     if (allPassed) {
       agent.chatOutput(`\n**All tests passed!** ✨`);
+      // Lets other plugins act on a green suite, e.g. git's autoCommit.
+      await agent.getService(AgentLifecycleService)?.executeHooks(new AfterTestsPassed(), agent);
       return;
     }
 

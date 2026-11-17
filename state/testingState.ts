@@ -7,12 +7,15 @@ const serializationSchema = z.object({
   testResults: z.record(z.string(), z.any()),
   repairCount: z.number(),
   maxAutoRepairs: z.number(),
+  /** The filesystem write count when the tests last ran automatically; see autoTest. */
+  testedWriteCount: z.number().default(0),
 });
 
 export class TestingState extends AgentStateSlice<typeof serializationSchema> {
   testResults: Record<string, TestResult> = {};
   repairCount = 0;
   maxAutoRepairs: number;
+  testedWriteCount = 0;
 
   constructor(readonly initialConfig: z.output<typeof TestingServiceConfigSchema>["agentDefaults"]) {
     super("TestingState", serializationSchema);
@@ -24,6 +27,7 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
       testResults: this.testResults,
       repairCount: this.repairCount,
       maxAutoRepairs: this.maxAutoRepairs,
+      testedWriteCount: this.testedWriteCount,
     };
   }
 
@@ -31,6 +35,7 @@ export class TestingState extends AgentStateSlice<typeof serializationSchema> {
     this.testResults = data.testResults as Record<string, TestResult>;
     this.repairCount = data.repairCount;
     this.maxAutoRepairs = data.maxAutoRepairs;
+    this.testedWriteCount = data.testedWriteCount;
   }
 
   show(): string {
